@@ -1,16 +1,17 @@
 #include "lexer.h"
+#include "LexerException.h"
 #include <regex>
+#include <vector>
+#include <unordered_map>
 
-const std::regex REG_IDENTIFIER("[a-zA-Z_]\\w*\\b");
-const std::regex REG_CONSTANT("[0-9]+\\b");
-const std::regex REG_KEYWORD("(?!)"); // temp fix until i find a clean way to connect between the regex and the type
-const std::regex REG_OPEN_PARENTHESIS("\\(");
-const std::regex REG_CLOSE_PARENTHESIS("\\)");
-const std::regex REG_OPEN_BRACE("\\{");
-const std::regex REG_CLOSE_BRACE("\\}");
-const std::regex REG_SEMICOLON(";");
-const std::regex REGEXS[] = {REG_IDENTIFIER, REG_CONSTANT, REG_KEYWORD, REG_OPEN_PARENTHESIS, REG_CLOSE_PARENTHESIS, REG_OPEN_BRACE, REG_CLOSE_BRACE, REG_SEMICOLON};
-const size_t REGEX_COUNT = sizeof(REGEXS) / sizeof(std::regex);
+const std::vector<std::pair<std::regex, TokenType>> TOKEN_PATTERNS = {
+    {std::regex("[a-zA-Z_]\\w*\\b"), TIdentifier},
+    {std::regex("[0-9]+\\b"), TConstant},
+    {std::regex("\\("), TOpenParenthesis},
+    {std::regex("\\)"), TCloseParenthesis},
+    {std::regex("\\{"), TOpenBrace},
+    {std::regex("\\}"), TCloseBrace},
+    {std::regex(";"), TSemicolon}};
 
 std::vector<Token> tokenize(std::string input)
 {
@@ -29,58 +30,27 @@ std::vector<Token> tokenize(std::string input)
         std::string longest_match;
         size_t longest_length = 0;
         std::smatch match;
-        for (int i = 0; i < REGEX_COUNT; i++)
+        for (const auto &[regex, type] : TOKEN_PATTERNS)
         {
-            if (std::regex_search(input, match, REGEXS[i]))
+            if (std::regex_search(input, match, regex))
             {
                 if (match.length() > 0 && match.position(0) == 0 && match[0].length() >= longest_length)
                 {
                     longest_match = input.substr(0, match.length(0));
                     longest_length = longest_match.length();
-                    token_type = TokenType(i);
+                    token_type = type;
                 }
             }
         }
+
         if (longest_length == 0)
         {
-            throw std::string("Invalid token: ") + input; // temporary
+            throw LexerException("Invalid token: " + input);
         }
 
         input = input.substr(longest_length);
-        std::cout << "longest: " << longest_match << ";" << longest_length << std::endl;
-        std::cout << "remaining: " << input << std::endl;
-
-        Token token;
-        token.type = token_type;
-        switch (token_type)
-        {
-        case TIdentifier:
-            if (longest_match == "int")
-            {
-                token.type = TKeyword;
-                token.value = KInt;
-            }
-            else if (longest_match == "void")
-            {
-                token.type = TKeyword;
-                token.value = KVoid;
-            }
-            else if (longest_match == "return")
-            {
-                token.type = TKeyword;
-                token.value = KReturn;
-            }
-            else
-            {
-                token.value = longest_match;
-            }
-            break;
-        case TConstant:
-            token.value = (size_t)atoi(longest_match.c_str());
-            break;
-        }
-
-        tokens.push_back(token);
+        
+        tokens.push_back(Token(token_type, longest_match));
     }
 
     return tokens;

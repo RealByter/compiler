@@ -1,6 +1,6 @@
 #include <iostream>
 #include <vector>
 #include <variant>
-#include "token.h"
+#include "Tokens/token.h"
 
-std::vector<Token> tokenize(std::string input);
+std::vector<std::unique_ptr<Token>> tokenize(std::string input);

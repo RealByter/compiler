@@ -3,6 +3,7 @@
 #include <regex>
 #include <vector>
 #include <unordered_map>
+#include <memory>
 
 const std::vector<std::pair<std::regex, TokenType>> TOKEN_PATTERNS = {
     {std::regex("[a-zA-Z_]\\w*\\b"), TIdentifier},
@@ -13,9 +14,9 @@ const std::vector<std::pair<std::regex, TokenType>> TOKEN_PATTERNS = {
     {std::regex("\\}"), TCloseBrace},
     {std::regex(";"), TSemicolon}};
 
-std::vector<Token> tokenize(std::string input)
+std::vector<std::unique_ptr<Token>> tokenize(std::string input)
 {
-    std::vector<Token> tokens;
+    std::vector<std::unique_ptr<Token>> tokens;
 
     while (!input.empty())
     {
@@ -49,8 +50,8 @@ std::vector<Token> tokenize(std::string input)
         }
 
         input = input.substr(longest_length);
-        
-        tokens.push_back(Token(token_type, longest_match));
+
+        tokens.push_back(Token::createToken(token_type, longest_match));
     }
 
     return tokens;

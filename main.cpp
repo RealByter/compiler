@@ -4,6 +4,11 @@
 #include <fstream>
 #include <sstream>
 #include "lexer.h"
+#include "LexerException.h"
+
+int preprocess(const std::string &input_file, const std::string &preprocessed_file);
+int generate_assembly(const std::string &preprocessed_file, const std::string &assembly_file);
+int compile_executable(const std::string &assembly_file, const std::string &output_file);
 
 int main(int argc, char *argv[])
 {
@@ -36,56 +41,76 @@ int main(int argc, char *argv[])
 	try
 	{
 		std::vector<Token> tokens = tokenize(input);
-		for(Token token : tokens)
+		for (Token token : tokens)
 		{
-			switch(token.type)
+			switch (token.type)
 			{
-				case TIdentifier: std::cout << std::get<std::string>(token.value) << std::endl; break;
-				case TConstant: std::cout << std::get<size_t>(token.value) << std::endl; break;
-				case TKeyword: std::cout << "Type: " << std::get<KeywordType>(token.value) << std::endl; break;
-				case TOpenParenthesis: std::cout << "Open Parenthesis" << std::endl; break;
-				case TCloseParenthesis: std::cout << "Close Parenthesis" << std::endl; break;
-				case TOpenBrace: std::cout << "Open Brace" << std::endl; break;
-				case TCloseBrace: std::cout << "Close Brace" << std::endl; break;
-				case TSemicolon: std::cout << "Semicolon" << std::endl; break;
+			case TIdentifier:
+				std::cout << std::get<std::string>(token.value) << std::endl;
+				break;
+			case TConstant:
+				std::cout << std::get<size_t>(token.value) << std::endl;
+				break;
+			case TKeyword:
+				std::cout << "Type: " << std::get<KeywordType>(token.value) << std::endl;
+				break;
+			case TOpenParenthesis:
+				std::cout << "Open Parenthesis" << std::endl;
+				break;
+			case TCloseParenthesis:
+				std::cout << "Close Parenthesis" << std::endl;
+				break;
+			case TOpenBrace:
+				std::cout << "Open Brace" << std::endl;
+				break;
+			case TCloseBrace:
+				std::cout << "Close Brace" << std::endl;
+				break;
+			case TSemicolon:
+				std::cout << "Semicolon" << std::endl;
+				break;
 			}
 		}
 	}
-	catch (std::string exp)
+	catch (LexerException exp)
 	{
-		std::cout << exp << std::endl;
+		std::cout << exp.what() << std::endl;
 		return -1;
 	}
 
 	std::string preprocessed_file = base_name + ".i";
-	err = system((std::string("gcc -E -P ") + input_file + " -o " + preprocessed_file).c_str());
-	if (err)
-	{
-		return -1;
-	}
-	if (!stop_at.empty() && stop_at == "--parse")
-	{
-		return 0;
-	}
-
 	std::string assembly_file = base_name + ".s";
-	err = system((std::string("gcc -S -O -fno-asynchronous-unwind-tables -fcf-protection=none ") + preprocessed_file + " -o " + assembly_file).c_str());
-	system((std::string("rm ") + preprocessed_file).c_str());
-	if (err)
-	{
-		return -1;
-	}
-	if (!stop_at.empty() && stop_at == "--codegen")
-	{
-		return 0;
-	}
-
 	std::string executable_file = base_name + ".out";
-	err = system((std::string("gcc ") + assembly_file + " -o " + executable_file).c_str());
-	system((std::string("rm ") + assembly_file).c_str());
-	if (err)
-	{
+
+	if (preprocess(input_file, preprocessed_file))
 		return -1;
-	}
+	if (stop_at == "--parse")
+		return 0;
+	if (generate_assembly(preprocessed_file, assembly_file))
+		return -1;
+	if (stop_at == "--codegen")
+		return 0;
+	if (compile_executable(assembly_file, executable_file))
+		return -1;
+
 	return 0;
+}
+
+int preprocess(const std::string &input_file, const std::string &preprocessed_file)
+{
+	return system((std::string("gcc -E -P ") + input_file + " -o " + preprocessed_file).c_str());
+}
+
+int generate_assembly(const std::string &preprocessed_file, const std::string &assembly_file)
+{
+	int err = system((std::string("gcc -S -O -fno-asynchronous-unwind-tables -fcf-protection=none ") + preprocessed_file + " -o " + assembly_file).c_str());
+	system((std::string("rm ") + preprocessed_file).c_str());
+	return err;
+}
+
+int compile_executable(const std::string &assembly_file, const std::string &executable_file)
+{
+	int err = system((std::string("gcc ") + assembly_file + " -o " + executable_file).c_str());
+	system((std::string("rm ") + assembly_file).c_str());
+	return err;
 }

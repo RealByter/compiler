@@ -1,10 +1,11 @@
-#include "function_definition.h"
+#pragma once
+#include "function.h"
 
 class Program
 {
 private:
-    FunctionDefinition function_definition;
+    Function function_definition;
 
 public:
-    Program(const FunctionDefinition &function_definition) : function_definition(function_definition) {}
+    Program(const Function &function_definition) : function_definition(function_definition) {}
 };

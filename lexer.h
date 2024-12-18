@@ -1,6 +1,6 @@
 #include <iostream>
-#include <vector>
+#include <queue>
 #include <variant>
 #include "Tokens/token.h"
 
-std::vector<std::unique_ptr<Token>> tokenize(std::string input);
+std::queue<std::unique_ptr<Token>> tokenize(std::string input);

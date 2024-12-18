@@ -1,4 +1,4 @@
-class Expression 
+#pragma once
+class Expression
 {
-
 };

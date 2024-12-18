@@ -24,10 +24,12 @@ public:
     Token(const TokenType &type) : type(type) {}
     virtual ~Token() = default;
 
+    virtual bool compareValue(const Token& other) const { return true; };
+
     static std::unique_ptr<Token> createToken(TokenType type, const std::string &value);
+    static bool compareTokens(const Token& token1, const Token& token2);
 
 protected:
-
 private:
     TokenType type;
 };

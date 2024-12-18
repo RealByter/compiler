@@ -1,3 +1,4 @@
+#pragma once
 #include "expression.h"
 #include "statement.h"
 

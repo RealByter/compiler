@@ -4,6 +4,7 @@
 #include <fstream>
 #include <sstream>
 #include "lexer.h"
+#include "parser.h"
 #include "LexerException.h"
 
 int preprocess(const std::string &input_file, const std::string &preprocessed_file);
@@ -40,12 +41,13 @@ int main(int argc, char *argv[])
 
 	try
 	{
-		std::vector<std::unique_ptr<Token>> tokens = tokenize(input);
-		for (const std::unique_ptr<Token>& token : tokens)
-		{
-			std::cout << token.get()->getType() << ", ";
-		}
-		std::cout << std::endl;
+		std::queue<std::unique_ptr<Token>> tokens = tokenize(input);
+		Program program = parse_program(tokens);
+		// for (const std::unique_ptr<Token>& token : tokens)
+		// {
+		// 	std::cout << token.get()->getType() << ", ";
+		// }
+		// std::cout << std::endl;
 	}
 	catch (LexerException exp)
 	{

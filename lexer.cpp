@@ -1,7 +1,7 @@
 #include "lexer.h"
 #include "LexerException.h"
 #include <regex>
-#include <vector>
+#include <queue>
 #include <unordered_map>
 #include <memory>
 
@@ -14,9 +14,9 @@ const std::vector<std::pair<std::regex, TokenType>> TOKEN_PATTERNS = {
     {std::regex("\\}"), TCloseBrace},
     {std::regex(";"), TSemicolon}};
 
-std::vector<std::unique_ptr<Token>> tokenize(std::string input)
+std::queue<std::unique_ptr<Token>> tokenize(std::string input)
 {
-    std::vector<std::unique_ptr<Token>> tokens;
+    std::queue<std::unique_ptr<Token>> tokens;
 
     while (!input.empty())
     {
@@ -51,7 +51,7 @@ std::vector<std::unique_ptr<Token>> tokenize(std::string input)
 
         input = input.substr(longest_length);
 
-        tokens.push_back(Token::createToken(token_type, longest_match));
+        tokens.push(Token::createToken(token_type, longest_match));
     }
 
     return tokens;

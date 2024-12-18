@@ -1,3 +1,4 @@
+#pragma once
 #include "token.h"
 
 enum KeywordType
@@ -10,8 +11,10 @@ enum KeywordType
 class KeywordToken : public Token
 {
 private:
-    KeywordType type;
+    KeywordType value;
 
 public:
-    KeywordToken(const KeywordType &type) : Token(TKeyword), type(type) {}
+    KeywordToken(const KeywordType &type) : Token(TKeyword), value(value) {}
+
+    virtual bool compareValue(const Token& other) const override;
 };

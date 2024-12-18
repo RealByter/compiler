@@ -1,3 +1,4 @@
+#pragma once
 #include "token.h"
 
 class CloseBraceToken: public Token 

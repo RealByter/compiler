@@ -1,3 +1,4 @@
+#pragma once
 #include "token.h"
 
 class ConstantToken : public Token
@@ -7,4 +8,5 @@ private:
 
 public:
     ConstantToken(const int &value) : Token(TConstant), value(value) {}
+    int getValue() const;
 };

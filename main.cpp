@@ -36,6 +36,20 @@ int main(int argc, char *argv[])
 	try
 	{
 		std::vector<Token> tokens = tokenize(input);
+		for(Token token : tokens)
+		{
+			switch(token.type)
+			{
+				case TIdentifier: std::cout << std::get<std::string>(token.value) << std::endl; break;
+				case TConstant: std::cout << std::get<size_t>(token.value) << std::endl; break;
+				case TKeyword: std::cout << "Type: " << std::get<KeywordType>(token.value) << std::endl; break;
+				case TOpenParenthesis: std::cout << "Open Parenthesis" << std::endl; break;
+				case TCloseParenthesis: std::cout << "Close Parenthesis" << std::endl; break;
+				case TOpenBrace: std::cout << "Open Brace" << std::endl; break;
+				case TCloseBrace: std::cout << "Close Brace" << std::endl; break;
+				case TSemicolon: std::cout << "Semicolon" << std::endl; break;
+			}
+		}
 	}
 	catch (std::string exp)
 	{

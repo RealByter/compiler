@@ -1,5 +1,6 @@
 #include <iostream>
 #include <vector>
+#include <variant>
 
 enum TokenType
 {
@@ -10,26 +11,27 @@ enum TokenType
     TCloseParenthesis,
     TOpenBrace,
     TCloseBrace,
-    TSemicolon
+    TSemicolon,
 };
 
-enum KeywordType {
+enum KeywordType
+{
     KInt,
     KVoid,
     KReturn,
 };
 
-struct Token
+class Token
 {
-    TokenType token;
-    union
-    {
-        size_t constant;
-        std::string identifier;
-        KeywordType keyword;
-    };
+public:
+    TokenType type;
+    std::variant<size_t, std::string, KeywordType> value;
 
-    ~Token() { // check why its needed and why simply changing to class doesnt work
+    Token() {
+        
+    }
+
+    ~Token() {
 
     }
 };

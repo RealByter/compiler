@@ -66,10 +66,15 @@ Identifier parse_identifier(std::queue<std::unique_ptr<Token>> &tokens)
     return identifier;
 }
 
-bool expect(const std::unique_ptr<Token> &expected, std::queue<std::unique_ptr<Token>> &tokens)
+bool expect(const Token expected, std::queue<std::unique_ptr<Token>> &tokens)
 {
+    if(tokens.empty())
+    {
+        throw LexerException("Unexpected end of tokens");
+    }
+
     const std::unique_ptr<Token> &token = tokens.front();
-    if (Token::compareTokens(*token, *expected))
+    if (Token::compareTokens(*token, expected))
     {
         tokens.pop();
         return true;
@@ -78,7 +83,7 @@ bool expect(const std::unique_ptr<Token> &expected, std::queue<std::unique_ptr<T
     {
         std::stringstream stream;
         stream << "Invalid token. Expected: ";
-        stream << expected.get()->getType();
+        stream << expected.getType();
         stream << " got: ";
         stream << token.get()->getType();
         throw LexerException(stream.str());

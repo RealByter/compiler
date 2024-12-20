@@ -18,6 +18,9 @@ pub enum Token {
     OpenBrace,
     CloseBrace,
     Semicolon,
+    Negation,
+    BitwiseComplement,
+    Decrement,
 }
 
 impl PartialEq for Token {
@@ -30,7 +33,10 @@ impl PartialEq for Token {
             (Token::CloseParenthesis, Token::CloseParenthesis) => true,      
             (Token::OpenBrace, Token::OpenBrace) => true,                    
             (Token::CloseBrace, Token::CloseBrace) => true,                  
-            (Token::Semicolon, Token::Semicolon) => true,                    
+            (Token::Semicolon, Token::Semicolon) => true,            
+            (Token::Negation, Token::Negation) => true,
+            (Token::BitwiseComplement, Token::BitwiseComplement) => true,
+            (Token::Decrement, Token::Decrement) => true,      
             _ => false,
         }
     } 
@@ -82,6 +88,18 @@ lazy_static::lazy_static! {
         TokenPattern {
             regex: Regex::new(r";").unwrap(),
             token_type: |_| Token::Semicolon,
+        },
+        TokenPattern {
+            regex: Regex::new(r"-").unwrap(),
+            token_type: |_| Token::Negation,
+        },
+        TokenPattern {
+            regex: Regex::new(r"~").unwrap(),
+            token_type: |_| Token::BitwiseComplement,
+        },
+        TokenPattern {
+            regex: Regex::new(r"--").unwrap(),
+            token_type: |_| Token::Decrement,
         },
     ];
 }

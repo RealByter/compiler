@@ -4,6 +4,7 @@ use std::io;
 mod gcc;
 mod lexer;
 mod parser;
+mod assembler;
 
 pub fn run(input_file: &str, stop_at: Option<&str>) -> io::Result<()> {
     let base_name = match input_file.rfind('.') {
@@ -12,12 +13,14 @@ pub fn run(input_file: &str, stop_at: Option<&str>) -> io::Result<()> {
     };
 
     let input = fs::read_to_string(input_file)?;
-    let mut tokens = lexer::tokenize(&input);
+    let tokens = lexer::tokenize(&input);
     for token in &tokens {
         println!("{:?}", token);
     }
-    let program = parser::parse_program(&mut tokens);
+    let program = parser::parse_program(&mut tokens.into_iter().peekable());
     println!("{:?}", program);
+    let assembly = assembler::assemble(program.unwrap());
+    println!("{:?}", assembly);
 
     let preprocessed_file = format!("{}.i", base_name);
     let assembly_file = format!("{}.s", base_name);

@@ -7,7 +7,7 @@ pub struct Program {
 
 #[derive(Debug)]
 pub struct FunctionDefinition {
-    pub identifier: String,
+    pub name: String,
     pub instructions: Vec<Instruction>,
 }
 
@@ -18,7 +18,7 @@ pub enum Instruction {
 }
 
 #[derive(Debug)]
-enum Operand {
+pub enum Operand {
     Imm(i32),
     Register,
 }
@@ -26,7 +26,7 @@ enum Operand {
 pub fn assemble(program: parser::Program) -> Program {
     Program {
         function: FunctionDefinition {
-            identifier: program.function.identifier,
+            name: program.function.identifier,
             instructions: match program.function.statement {
                 parser::Statement::Return(expression) => vec![
                     Instruction::Mov(

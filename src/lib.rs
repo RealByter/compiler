@@ -5,6 +5,7 @@ mod gcc;
 mod lexer;
 mod parser;
 mod assembler;
+mod generator;
 
 pub fn run(input_file: &str, stop_at: Option<&str>) -> io::Result<()> {
     let base_name = match input_file.rfind('.') {
@@ -21,6 +22,7 @@ pub fn run(input_file: &str, stop_at: Option<&str>) -> io::Result<()> {
     println!("{:?}", program);
     let assembly = assembler::assemble(program.unwrap());
     println!("{:?}", assembly);
+    generator::generate(&format!("{}.asm", base_name), assembly)?;
 
     let preprocessed_file = format!("{}.i", base_name);
     let assembly_file = format!("{}.s", base_name);

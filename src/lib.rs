@@ -1,11 +1,11 @@
 use std::fs;
 use std::io;
 
+mod assembler;
 mod gcc;
+mod generator;
 mod lexer;
 mod parser;
-mod assembler;
-mod generator;
 
 pub fn run(input_file: &str, stop_at: Option<&str>) -> io::Result<()> {
     let base_name = match input_file.rfind('.') {
@@ -14,27 +14,32 @@ pub fn run(input_file: &str, stop_at: Option<&str>) -> io::Result<()> {
     };
 
     let input = fs::read_to_string(input_file)?;
-    let tokens = lexer::tokenize(&input);
-    for token in &tokens {
-        println!("{:?}", token);
-    }
-    let program = parser::parse_program(&mut tokens.into_iter().peekable());
-    println!("{:?}", program);
-    let assembly = assembler::assemble(program.unwrap());
-    println!("{:?}", assembly);
-    generator::generate(&format!("{}.asm", base_name), assembly)?;
 
-    let preprocessed_file = format!("{}.i", base_name);
+    // let preprocessed_file = format!("{}.i", base_name);
     let assembly_file = format!("{}.s", base_name);
     let executable_file = format!("{}.out", base_name);
 
-    gcc::preprocess(input_file, &preprocessed_file)?;
+    let tokens = lexer::tokenize(&input);
+    // gcc::preprocess(input_file, &preprocessed_file)?;
+    for token in &tokens {
+        println!("{:?}", token);
+    }
+
+    if stop_at == Some("--lex") {
+        return Ok(());
+    }
+
+    // gcc::generate_assembly(&preprocessed_file, &assembly_file)?;
+    let program = parser::parse_program(&mut tokens.into_iter().peekable());
+    println!("{:?}", program);
 
     if stop_at == Some("--parse") {
         return Ok(());
     }
 
-    gcc::generate_assembly(&preprocessed_file, &assembly_file)?;
+    let assembly = assembler::assemble(program.unwrap());
+    println!("{:?}", assembly);
+    generator::generate(&assembly_file, assembly)?;
 
     if stop_at == Some("--codegen") {
         return Ok(());

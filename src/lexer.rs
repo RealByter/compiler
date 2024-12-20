@@ -23,8 +23,8 @@ pub enum Token {
 
 #[derive(Debug, PartialEq)]
 pub enum UnaryOperator {
-    Negation,
-    BitwiseComplement,
+    Negate,
+    Complement,
     Decrement,
 }
 
@@ -94,11 +94,11 @@ lazy_static::lazy_static! {
         },
         TokenPattern {
             regex: Regex::new(r"-").unwrap(),
-            token_type: |_| Token::UnaryOperator(UnaryOperator::Negation),
+            token_type: |_| Token::UnaryOperator(UnaryOperator::Negate),
         },
         TokenPattern {
             regex: Regex::new(r"~").unwrap(),
-            token_type: |_| Token::UnaryOperator(UnaryOperator::BitwiseComplement),
+            token_type: |_| Token::UnaryOperator(UnaryOperator::Complement),
         },
         TokenPattern {
             regex: Regex::new(r"--").unwrap(),

@@ -25,8 +25,8 @@ pub enum Expression {
 
 #[derive(Debug)]
 pub enum UnaryOperator {
-    Negation,
-    BitwiseComplement,
+    Negate,
+    Complement,
 }
 
 pub fn parse_program(
@@ -106,8 +106,8 @@ fn parse_expression(
 
 fn parse_unary_operator(op: lexer::UnaryOperator) -> Result<UnaryOperator, String> {
     match op {
-        lexer::UnaryOperator::Negation => Ok(UnaryOperator::Negation),
-        lexer::UnaryOperator::BitwiseComplement => Ok(UnaryOperator::BitwiseComplement),
+        lexer::UnaryOperator::Negate => Ok(UnaryOperator::Negate),
+        lexer::UnaryOperator::Complement => Ok(UnaryOperator::Complement),
         _ => return Err(format!("Unsupported unary operator: {:?}", op)),
     }
 }

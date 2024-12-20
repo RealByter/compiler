@@ -6,6 +6,7 @@ mod gcc;
 mod generator;
 mod lexer;
 mod parser;
+mod tacker;
 
 pub fn run(input_file: &str, stop_at: Option<&str>) -> io::Result<()> {
     let base_name = match input_file.rfind('.') {
@@ -30,16 +31,22 @@ pub fn run(input_file: &str, stop_at: Option<&str>) -> io::Result<()> {
     }
 
     // gcc::generate_assembly(&preprocessed_file, &assembly_file)?;
-    let program = parser::parse_program(&mut tokens.into_iter().peekable());
+    let program = parser::parse_program(&mut tokens.into_iter().peekable()).unwrap();
     println!("{:?}", program);
 
     if stop_at == Some("--parse") {
         return Ok(());
     }
 
-    let assembly = assembler::assemble(program.unwrap());
-    println!("{:?}", assembly);
-    generator::generate(&assembly_file, assembly)?;
+    let tacky = tacker::generate_tacky(program);
+    println!("{:?}", tacky);
+    if stop_at == Some("--tacky") {
+        return Ok(());
+    }
+
+    // let assembly = assembler::assemble(program);
+    // println!("{:?}", assembly);
+    // generator::generate(&assembly_file, assembly)?;
 
     if stop_at == Some("--codegen") {
         return Ok(());

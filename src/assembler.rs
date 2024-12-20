@@ -32,6 +32,7 @@ pub fn assemble(program: parser::Program) -> Program {
                     Instruction::Mov(
                         match expression {
                             parser::Expression::Constant(value) => Operand::Imm(value),
+                            _ => unimplemented!(),
                         },
                         Operand::Register,
                     ),

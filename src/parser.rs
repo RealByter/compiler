@@ -1,4 +1,4 @@
-use crate::lexer::{Keyword, Token};
+use crate::lexer::{self, Keyword, Token};
 use std::iter::Peekable;
 
 #[derive(Debug)]
@@ -20,6 +20,13 @@ pub enum Statement {
 #[derive(Debug)]
 pub enum Expression {
     Constant(i64),
+    Unary(UnaryOperator, Box<Expression>),
+}
+
+#[derive(Debug)]
+pub enum UnaryOperator {
+    Negation,
+    BitwiseComplement,
 }
 
 pub fn parse_program(
@@ -77,11 +84,31 @@ fn parse_expression(
 ) -> Result<Expression, String> {
     match tokens.next() {
         Some(Token::Constant(constant)) => Ok(Expression::Constant(constant)),
+        Some(Token::UnaryOperator(operator)) => {
+            let expression = parse_expression(tokens)?;
+            Ok(Expression::Unary(
+                parse_unary_operator(operator)?,
+                Box::new(expression),
+            ))
+        }
+        Some(Token::OpenParenthesis) => {
+            let expression = parse_expression(tokens)?;
+            expect(Token::CloseParenthesis, tokens)?;
+            Ok(expression)
+        }
         Some(token) => Err(format!(
             "Invalid token. Expected a constant, got: {:?}",
             token
         )),
         None => Err("Unexpected end of tokens.".to_string()),
+    }
+}
+
+fn parse_unary_operator(op: lexer::UnaryOperator) -> Result<UnaryOperator, String> {
+    match op {
+        lexer::UnaryOperator::Negation => Ok(UnaryOperator::Negation),
+        lexer::UnaryOperator::BitwiseComplement => Ok(UnaryOperator::BitwiseComplement),
+        _ => return Err(format!("Unsupported unary operator: {:?}", op)),
     }
 }
 

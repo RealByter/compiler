@@ -18,6 +18,11 @@ pub enum Token {
     OpenBrace,
     CloseBrace,
     Semicolon,
+    UnaryOperator(UnaryOperator),
+}
+
+#[derive(Debug, PartialEq)]
+pub enum UnaryOperator {
     Negation,
     BitwiseComplement,
     Decrement,
@@ -34,9 +39,7 @@ impl PartialEq for Token {
             (Token::OpenBrace, Token::OpenBrace) => true,                    
             (Token::CloseBrace, Token::CloseBrace) => true,                  
             (Token::Semicolon, Token::Semicolon) => true,            
-            (Token::Negation, Token::Negation) => true,
-            (Token::BitwiseComplement, Token::BitwiseComplement) => true,
-            (Token::Decrement, Token::Decrement) => true,      
+            (Token::UnaryOperator(o1), Token::UnaryOperator(o2)) => o1 == o2,     
             _ => false,
         }
     } 
@@ -91,15 +94,15 @@ lazy_static::lazy_static! {
         },
         TokenPattern {
             regex: Regex::new(r"-").unwrap(),
-            token_type: |_| Token::Negation,
+            token_type: |_| Token::UnaryOperator(UnaryOperator::Negation),
         },
         TokenPattern {
             regex: Regex::new(r"~").unwrap(),
-            token_type: |_| Token::BitwiseComplement,
+            token_type: |_| Token::UnaryOperator(UnaryOperator::BitwiseComplement),
         },
         TokenPattern {
             regex: Regex::new(r"--").unwrap(),
-            token_type: |_| Token::Decrement,
+            token_type: |_| Token::UnaryOperator(UnaryOperator::Decrement),
         },
     ];
 }

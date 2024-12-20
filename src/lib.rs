@@ -44,9 +44,9 @@ pub fn run(input_file: &str, stop_at: Option<&str>) -> io::Result<()> {
         return Ok(());
     }
 
-    // let assembly = assembler::assemble(program);
-    // println!("{:?}", assembly);
-    // generator::generate(&assembly_file, assembly)?;
+    let assembly = assembler::assemble(tacky);
+    println!("{:?}", assembly);
+    generator::generate(&assembly_file, assembly)?;
 
     if stop_at == Some("--codegen") {
         return Ok(());

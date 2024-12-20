@@ -12,7 +12,7 @@ pub enum Keyword {
 pub enum Token {
     Identifier(String),
     Keyword(Keyword),
-    Constant(i32),
+    Constant(i64),
     OpenParenthesis,
     CloseParenthesis,
     OpenBrace,

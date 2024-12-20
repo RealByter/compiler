@@ -19,7 +19,7 @@ pub enum Instruction {
 
 #[derive(Debug)]
 pub enum Operand {
-    Imm(i32),
+    Imm(i64),
     Register,
 }
 

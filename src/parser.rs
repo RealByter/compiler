@@ -19,7 +19,7 @@ pub enum Statement {
 
 #[derive(Debug)]
 pub enum Expression {
-    Constant(i32),
+    Constant(i64),
 }
 
 pub fn parse_program(

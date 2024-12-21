@@ -34,6 +34,11 @@ pub enum BinaryOperator {
     Add,
     Sub,
     Mult,
+    And,
+    Or,
+    Xor,
+    LeftShift,
+    RightShift,
 }
 
 #[derive(Debug, Clone)]
@@ -76,7 +81,12 @@ pub fn tacky_to_assembly(orig_instructions: Vec<tacker::Instruction>) -> Vec<Ins
             tacker::Instruction::Binary(
                 op @ (tacker::BinaryOperator::Add
                 | tacker::BinaryOperator::Subtract
-                | tacker::BinaryOperator::Multiply),
+                | tacker::BinaryOperator::Multiply
+                | tacker::BinaryOperator::And
+                | tacker::BinaryOperator::Or
+                | tacker::BinaryOperator::Xor
+                | tacker::BinaryOperator::LeftShift
+                | tacker::BinaryOperator::RightShift),
                 src1,
                 src2,
                 dst,
@@ -90,6 +100,11 @@ pub fn tacky_to_assembly(orig_instructions: Vec<tacker::Instruction>) -> Vec<Ins
                         tacker::BinaryOperator::Add => BinaryOperator::Add,
                         tacker::BinaryOperator::Subtract => BinaryOperator::Sub,
                         tacker::BinaryOperator::Multiply => BinaryOperator::Mult,
+                        tacker::BinaryOperator::And => BinaryOperator::And,
+                        tacker::BinaryOperator::Or => BinaryOperator::Or,
+                        tacker::BinaryOperator::Xor => BinaryOperator::Xor,
+                        tacker::BinaryOperator::LeftShift => BinaryOperator::LeftShift,
+                        tacker::BinaryOperator::RightShift => BinaryOperator::RightShift,
                         _ => panic!("Checked only for these"),
                     },
                     val_to_operand(src2),

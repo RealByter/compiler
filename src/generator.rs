@@ -95,6 +95,21 @@ pub fn generate(file_path: &str, program: assembler::Program) -> io::Result<()> 
                     assembler::BinaryOperator::Mult => {
                         write!(file, "\timull ")?;
                     }
+                    assembler::BinaryOperator::And => {
+                        write!(file, "\tandl ")?;
+                    }
+                    assembler::BinaryOperator::Or => {
+                        write!(file, "\torl ")?;
+                    }
+                    assembler::BinaryOperator::Xor => {
+                        write!(file, "\txorl ")?;
+                    }
+                    assembler::BinaryOperator::LeftShift => {
+                        write!(file, "\tshl ")?;
+                    }
+                    assembler::BinaryOperator::RightShift => {
+                        write!(file, "\tshr ")?;
+                    }
                 }
 
                 write_operand(&mut file, operand1)?;

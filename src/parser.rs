@@ -40,16 +40,26 @@ pub enum BinaryOperator {
     Multiply,
     Divide,
     Modulo,
+    Xor,
+    And,
+    Or,
+    LeftShift,
+    RightShift,
 }
 
 lazy_static! {
     static ref PRECEDENCE_MAP: HashMap<BinaryOperator, u8> = {
         let mut map = HashMap::new();
-        map.insert(BinaryOperator::Add, 45);
-        map.insert(BinaryOperator::Subtract, 45);
+        map.insert(BinaryOperator::Add, 40);
+        map.insert(BinaryOperator::Subtract, 40);
         map.insert(BinaryOperator::Multiply, 50);
         map.insert(BinaryOperator::Divide, 50);
         map.insert(BinaryOperator::Modulo, 50);
+        map.insert(BinaryOperator::Xor, 30);
+        map.insert(BinaryOperator::And, 30);
+        map.insert(BinaryOperator::Or, 20);
+        map.insert(BinaryOperator::LeftShift, 50);
+        map.insert(BinaryOperator::RightShift, 50);
         map
     };
 }
@@ -114,7 +124,12 @@ fn parse_expression(
         | lexer::Operator::Minus
         | lexer::Operator::Multiply
         | lexer::Operator::Divide
-        | lexer::Operator::Modulo),
+        | lexer::Operator::Modulo
+        | lexer::Operator::And
+        | lexer::Operator::Or
+        | lexer::Operator::Xor
+        | lexer::Operator::ShiftLeft
+        | lexer::Operator::ShiftRight),
     )) = tokens.peek()
     {
         let op = parse_binary_operator(&op)?;
@@ -170,6 +185,11 @@ fn parse_binary_operator(op: &lexer::Operator) -> Result<BinaryOperator, String>
         lexer::Operator::Multiply => Ok(BinaryOperator::Multiply),
         lexer::Operator::Divide => Ok(BinaryOperator::Divide),
         lexer::Operator::Modulo => Ok(BinaryOperator::Modulo),
+        lexer::Operator::Xor => Ok(BinaryOperator::Xor),
+        lexer::Operator::And => Ok(BinaryOperator::And),
+        lexer::Operator::Or => Ok(BinaryOperator::Or),
+        lexer::Operator::ShiftLeft => Ok(BinaryOperator::LeftShift),
+        lexer::Operator::ShiftRight => Ok(BinaryOperator::RightShift),
         _ => return Err(format!("Unsupported binary operator: {:?}", op)),
     }
 }

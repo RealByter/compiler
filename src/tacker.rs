@@ -37,6 +37,11 @@ pub enum BinaryOperator {
     Multiply,
     Divide,
     Remainder,
+    And,
+    Or,
+    Xor,
+    LeftShift,
+    RightShift,
 }
 
 pub fn generate_tacky(program: parser::Program) -> Program {
@@ -70,7 +75,7 @@ fn emit_tacky_value(expression: parser::Expression, instructions: &mut Vec<Instr
             };
             instructions.push(Instruction::Unary(operator, src, dst.clone()));
             dst
-        },
+        }
         parser::Expression::Binary(operator, operand1, operand2) => {
             let src1 = emit_tacky_value(*operand1, instructions);
             let src2 = emit_tacky_value(*operand2, instructions);
@@ -81,6 +86,11 @@ fn emit_tacky_value(expression: parser::Expression, instructions: &mut Vec<Instr
                 parser::BinaryOperator::Multiply => BinaryOperator::Multiply,
                 parser::BinaryOperator::Divide => BinaryOperator::Divide,
                 parser::BinaryOperator::Modulo => BinaryOperator::Remainder,
+                parser::BinaryOperator::Xor => BinaryOperator::Xor,
+                parser::BinaryOperator::And => BinaryOperator::And,
+                parser::BinaryOperator::Or => BinaryOperator::Or,
+                parser::BinaryOperator::LeftShift => BinaryOperator::LeftShift,
+                parser::BinaryOperator::RightShift => BinaryOperator::RightShift,
             };
             instructions.push(Instruction::Binary(operator, src1, src2, dst.clone()));
             dst
@@ -91,5 +101,8 @@ fn emit_tacky_value(expression: parser::Expression, instructions: &mut Vec<Instr
 static mut TEMP_COUNTER: i64 = -1;
 
 fn make_temp_name() -> String {
-    format!("temp.{}", unsafe { TEMP_COUNTER += 1; TEMP_COUNTER })
+    format!("temp.{}", unsafe {
+        TEMP_COUNTER += 1;
+        TEMP_COUNTER
+    })
 }

@@ -17,6 +17,9 @@ pub enum Instruction {
     Mov(Operand, Operand),
     Ret,
     Unary(UnaryOperator, Operand),
+    Binary(BinaryOperator, Operand, Operand),
+    Idiv(Operand),
+    Cdq,
     AllocateStack(i64),
 }
 
@@ -24,6 +27,13 @@ pub enum Instruction {
 pub enum UnaryOperator {
     Neg,
     Not,
+}
+
+#[derive(Debug, Clone)]
+pub enum BinaryOperator {
+    Add,
+    Sub,
+    Mult,
 }
 
 #[derive(Debug, Clone)]
@@ -37,7 +47,9 @@ pub enum Operand {
 #[derive(Debug, Clone)]
 pub enum Reg {
     AX,
-    R10D,
+    DX,
+    R10,
+    R11,
 }
 
 pub fn tacky_to_assembly(orig_instructions: Vec<tacker::Instruction>) -> Vec<Instruction> {
@@ -61,18 +73,76 @@ pub fn tacky_to_assembly(orig_instructions: Vec<tacker::Instruction>) -> Vec<Ins
                     val_to_operand(dst),
                 ));
             }
+            tacker::Instruction::Binary(
+                op @ (tacker::BinaryOperator::Add
+                | tacker::BinaryOperator::Subtract
+                | tacker::BinaryOperator::Multiply),
+                src1,
+                src2,
+                dst,
+            ) => {
+                instructions.push(Instruction::Mov(
+                    val_to_operand(src1),
+                    val_to_operand(dst.clone()),
+                ));
+                instructions.push(Instruction::Binary(
+                    match op {
+                        tacker::BinaryOperator::Add => BinaryOperator::Add,
+                        tacker::BinaryOperator::Subtract => BinaryOperator::Sub,
+                        tacker::BinaryOperator::Multiply => BinaryOperator::Mult,
+                        _ => panic!("Checked only for these"),
+                    },
+                    val_to_operand(src2),
+                    val_to_operand(dst),
+                ));
+            }
+            tacker::Instruction::Binary(tacker::BinaryOperator::Divide, src1, src2, dst) => {
+                instructions.push(Instruction::Mov(
+                    val_to_operand(src1),
+                    Operand::Reg(Reg::AX),
+                ));
+                instructions.push(Instruction::Cdq);
+                instructions.push(Instruction::Idiv(val_to_operand(src2)));
+                instructions.push(Instruction::Mov(Operand::Reg(Reg::AX), val_to_operand(dst)));
+            }
+            tacker::Instruction::Binary(tacker::BinaryOperator::Remainder, src1, src2, dst) => {
+                instructions.push(Instruction::Mov(
+                    val_to_operand(src1),
+                    Operand::Reg(Reg::AX),
+                ));
+                instructions.push(Instruction::Cdq);
+                instructions.push(Instruction::Idiv(val_to_operand(src2)));
+                instructions.push(Instruction::Mov(Operand::Reg(Reg::DX), val_to_operand(dst)));
+            }
         }
     }
 
     instructions
 }
 
-fn get_identifier_offset(identifiers: &mut HashMap<String, i64>, stack_size: &mut i64, name: &str) -> i64 {
+fn get_identifier_offset(
+    identifiers: &mut HashMap<String, i64>,
+    stack_size: &mut i64,
+    name: &str,
+) -> i64 {
     if !identifiers.contains_key(name) {
         *stack_size += 4;
         identifiers.insert(name.to_string(), -*stack_size);
     }
     identifiers[name]
+}
+
+fn replace_psuedo_operand_if_needed(
+    operand: Operand,
+    identifiers: &mut HashMap<String, i64>,
+    stack_size: &mut i64,
+) -> Operand {
+    match operand {
+        Operand::Pseudo(name) => {
+            Operand::Stack(get_identifier_offset(identifiers, stack_size, &name))
+        }
+        _ => operand,
+    }
 }
 
 fn replace_pseudo_operands(instructions: &mut Vec<Instruction>) -> i64 {
@@ -82,27 +152,50 @@ fn replace_pseudo_operands(instructions: &mut Vec<Instruction>) -> i64 {
     for instruction in instructions.iter_mut() {
         match instruction {
             Instruction::Mov(src, dst) => {
-                let new_src = match src {
-                    Operand::Pseudo(name) => {
-                        Operand::Stack(get_identifier_offset(&mut identifiers, &mut stack_size, name))
-                    }
-                    _ => src.clone(),
-                };
-
-                let new_dst = match dst {
-                    Operand::Pseudo(name) => {
-                        Operand::Stack(get_identifier_offset(&mut identifiers, &mut stack_size, name))
-                    }
-                    _ => dst.clone(),
-                };
-
-                *instruction = Instruction::Mov(new_src, new_dst);
+                *instruction = Instruction::Mov(
+                    replace_psuedo_operand_if_needed(
+                        src.clone(),
+                        &mut identifiers,
+                        &mut stack_size,
+                    ),
+                    replace_psuedo_operand_if_needed(
+                        dst.clone(),
+                        &mut identifiers,
+                        &mut stack_size,
+                    ),
+                );
             }
             Instruction::Unary(op, Operand::Pseudo(name)) => {
                 *instruction = Instruction::Unary(
                     op.clone(),
-                    Operand::Stack(get_identifier_offset(&mut identifiers, &mut stack_size, name)),
+                    Operand::Stack(get_identifier_offset(
+                        &mut identifiers,
+                        &mut stack_size,
+                        name,
+                    )),
                 );
+            }
+            Instruction::Binary(op, src, dst) => {
+                *instruction = Instruction::Binary(
+                    op.clone(),
+                    replace_psuedo_operand_if_needed(
+                        src.clone(),
+                        &mut identifiers,
+                        &mut stack_size,
+                    ),
+                    replace_psuedo_operand_if_needed(
+                        dst.clone(),
+                        &mut identifiers,
+                        &mut stack_size,
+                    ),
+                );
+            }
+            Instruction::Idiv(Operand::Pseudo(name)) => {
+                *instruction = Instruction::Idiv(Operand::Stack(get_identifier_offset(
+                    &mut identifiers,
+                    &mut stack_size,
+                    name,
+                )));
             }
             _ => {}
         }
@@ -111,16 +204,63 @@ fn replace_pseudo_operands(instructions: &mut Vec<Instruction>) -> i64 {
     stack_size
 }
 
-fn allocate_stack_and_fix_mov(orig_instructions: Vec<Instruction>, stack_size: i64) -> Vec<Instruction> {
+fn fix_up(orig_instructions: Vec<Instruction>, stack_size: i64) -> Vec<Instruction> {
     let mut instructions: Vec<Instruction> = Vec::new();
 
     instructions.push(Instruction::AllocateStack(stack_size));
 
     for instruction in orig_instructions {
         match instruction {
+            // Can't move from memory address to memory address
             Instruction::Mov(Operand::Stack(src), Operand::Stack(dst)) => {
-                instructions.push(Instruction::Mov(Operand::Stack(src), Operand::Reg(Reg::R10D)));
-                instructions.push(Instruction::Mov(Operand::Reg(Reg::R10D), Operand::Stack(dst)));
+                instructions.push(Instruction::Mov(
+                    Operand::Stack(src),
+                    Operand::Reg(Reg::R10),
+                ));
+                instructions.push(Instruction::Mov(
+                    Operand::Reg(Reg::R10),
+                    Operand::Stack(dst),
+                ));
+            }
+            // Can't divide by an immediate value
+            Instruction::Idiv(Operand::Imm(value)) => {
+                instructions.push(Instruction::Mov(
+                    Operand::Imm(value),
+                    Operand::Reg(Reg::R10),
+                ));
+                instructions.push(Instruction::Idiv(Operand::Reg(Reg::R10)));
+            }
+            // Can't use memory addresses as both the src and destination
+            Instruction::Binary(
+                op @ (BinaryOperator::Add | BinaryOperator::Sub),
+                Operand::Stack(src),
+                Operand::Stack(dst),
+            ) => {
+                instructions.push(Instruction::Mov(
+                    Operand::Stack(src),
+                    Operand::Reg(Reg::R10),
+                ));
+                instructions.push(Instruction::Binary(
+                    op,
+                    Operand::Reg(Reg::R10),
+                    Operand::Stack(dst),
+                ));
+            }
+            // Can't use a memory address as its destination
+            Instruction::Binary(BinaryOperator::Mult, src, Operand::Stack(dst)) => {
+                instructions.push(Instruction::Mov(
+                    Operand::Stack(dst),
+                    Operand::Reg(Reg::R11),
+                ));
+                instructions.push(Instruction::Binary(
+                    BinaryOperator::Mult,
+                    src,
+                    Operand::Reg(Reg::R11),
+                ));
+                instructions.push(Instruction::Mov(
+                    Operand::Reg(Reg::R11),
+                    Operand::Stack(dst),
+                ));
             }
             _ => instructions.push(instruction),
         }
@@ -132,7 +272,7 @@ fn allocate_stack_and_fix_mov(orig_instructions: Vec<Instruction>, stack_size: i
 pub fn assemble(program: tacker::Program) -> Program {
     let mut instructions = tacky_to_assembly(program.function.instructions);
     let stack_size = replace_pseudo_operands(&mut instructions);
-    let instructions = allocate_stack_and_fix_mov(instructions, stack_size);
+    let instructions = fix_up(instructions, stack_size);
 
     Program {
         function: FunctionDefinition {

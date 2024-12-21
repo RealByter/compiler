@@ -123,7 +123,7 @@ fn parse_expression(
             break;
         }
         tokens.next();
-        let right: Expression = parse_expression(tokens, precedence)?;
+        let right: Expression = parse_expression(tokens, precedence + 1)?;
         left = Expression::Binary(op, Box::new(left), Box::new(right));
     }
     Ok(left)

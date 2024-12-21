@@ -46,12 +46,12 @@ pub fn run(input_file: &str, stop_at: Option<&str>) -> io::Result<()> {
 
     let assembly = assembler::assemble(tacky);
     println!("{:?}", assembly);
-    generator::generate(&assembly_file, assembly)?;
-
+    
     if stop_at == Some("--codegen") {
         return Ok(());
     }
-
+    
+    generator::generate(&assembly_file, assembly)?;
     gcc::compile_executable(&assembly_file, &executable_file)?;
 
     Ok(())

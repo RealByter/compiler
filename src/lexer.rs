@@ -30,6 +30,11 @@ pub enum Operator {
     Multiply,
     Divide,
     Modulo,
+    And,
+    Or,
+    Xor,
+    ShiftLeft,
+    ShiftRight,
 }
 
 impl PartialEq for Token {
@@ -123,6 +128,26 @@ lazy_static::lazy_static! {
         TokenPattern {
             regex: Regex::new(r"%").unwrap(),
             token_type: |_| Token::Operator(Operator::Modulo),
+        },
+        TokenPattern {
+            regex: Regex::new(r"&").unwrap(),
+            token_type: |_| Token::Operator(Operator::And),
+        },
+        TokenPattern {
+            regex: Regex::new(r"\|").unwrap(),
+            token_type: |_| Token::Operator(Operator::Or),
+        },
+        TokenPattern {
+            regex: Regex::new(r"\^").unwrap(),
+            token_type: |_| Token::Operator(Operator::Xor),
+        },
+        TokenPattern {
+            regex: Regex::new(r"<<").unwrap(),
+            token_type: |_| Token::Operator(Operator::ShiftLeft),
+        },
+        TokenPattern {
+            regex: Regex::new(r">>").unwrap(),
+            token_type: |_| Token::Operator(Operator::ShiftRight),
         },
     ];
 }

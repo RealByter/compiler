@@ -38,7 +38,7 @@ pub fn compile_executable(assembly_file: &str, executable_file: &str) -> io::Res
     let status = Command::new("gcc")
         .args([assembly_file, "-o", executable_file])
         .status()?;
-    fs::remove_file(assembly_file)?;
+    // fs::remove_file(assembly_file)?;
     if !status.success() {
         return Err(io::Error::new(io::ErrorKind::Other, "Compilation failed"));
     }

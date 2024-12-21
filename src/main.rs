@@ -6,7 +6,7 @@ fn main() -> io::Result<()> {
     let args: Vec<String> = env::args().collect();
 
     if args.len() != 2 && args.len() != 3 {
-        eprintln!("Invalid args. Should be: \"program <input_file> [--lex|--parse|--codegen]\"");
+        eprintln!("Invalid args. Should be: \"program <input_file> [--lex|--parse|--tacky|--codegen]\"");
         std::process::exit(1);
     }
 

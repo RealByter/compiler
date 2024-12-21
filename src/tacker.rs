@@ -49,19 +49,20 @@ pub fn generate_tacky(program: parser::Program) -> Program {
 }
 
 fn emit_tacky(expression: parser::Expression, instructions: &mut Vec<Instruction>) -> Val {
-    match expression {
-        parser::Expression::Constant(value) => Val::Constant(value),
-        parser::Expression::Unary(operator, expression) => {
-            let src = emit_tacky(*expression, instructions);
-            let dst = Val::Var(make_temp_name());
-            let operator = match operator {
-                parser::UnaryOperator::Negate => UnaryOperator::Negate,
-                parser::UnaryOperator::Complement => UnaryOperator::Complement,
-            };
-            instructions.push(Instruction::Unary(operator, src, dst.clone()));
-            dst
-        }
-    }
+    // match expression {
+    //     parser::Expression::Constant(value) => Val::Constant(value),
+    //     parser::Expression::Unary(operator, expression) => {
+    //         let src = emit_tacky(*expression, instructions);
+    //         let dst = Val::Var(make_temp_name());
+    //         let operator = match operator {
+    //             parser::UnaryOperator::Negate => UnaryOperator::Negate,
+    //             parser::UnaryOperator::Complement => UnaryOperator::Complement,
+    //         };
+    //         instructions.push(Instruction::Unary(operator, src, dst.clone()));
+    //         dst
+    //     }
+    // }
+    Val::Constant(0)
 }
 
 static mut TEMP_COUNTER: i64 = -1;

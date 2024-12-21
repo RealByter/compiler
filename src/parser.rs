@@ -1,4 +1,7 @@
+use lazy_static::lazy_static;
+
 use crate::lexer::{self, Keyword, Token};
+use std::collections::HashMap;
 use std::iter::Peekable;
 
 #[derive(Debug)]
@@ -21,12 +24,34 @@ pub enum Statement {
 pub enum Expression {
     Constant(i64),
     Unary(UnaryOperator, Box<Expression>),
+    Binary(BinaryOperator, Box<Expression>, Box<Expression>),
 }
 
 #[derive(Debug)]
 pub enum UnaryOperator {
     Negate,
     Complement,
+}
+
+#[derive(Debug, PartialEq, Eq, Hash)]
+pub enum BinaryOperator {
+    Add,
+    Subtract,
+    Multiply,
+    Divide,
+    Modulo,
+}
+
+lazy_static! {
+    static ref PRECEDENCE_MAP: HashMap<BinaryOperator, u8> = {
+        let mut map = HashMap::new();
+        map.insert(BinaryOperator::Add, 45);
+        map.insert(BinaryOperator::Subtract, 45);
+        map.insert(BinaryOperator::Multiply, 50);
+        map.insert(BinaryOperator::Divide, 50);
+        map.insert(BinaryOperator::Modulo, 50);
+        map
+    };
 }
 
 pub fn parse_program(
@@ -74,41 +99,78 @@ fn parse_statement(
     tokens: &mut Peekable<impl Iterator<Item = Token>>,
 ) -> Result<Statement, String> {
     expect(Token::Keyword(Keyword::Return), tokens)?;
-    let expression = parse_expression(tokens)?;
+    let expression = parse_expression(tokens, 0)?;
     expect(Token::Semicolon, tokens)?;
     Ok(Statement::Return(expression))
 }
 
 fn parse_expression(
     tokens: &mut Peekable<impl Iterator<Item = Token>>,
+    min_precedence: u8,
 ) -> Result<Expression, String> {
+    let mut left = parse_factor(tokens)?;
+    while let Some(Token::Operator(
+        op @ (lexer::Operator::Plus
+        | lexer::Operator::Minus
+        | lexer::Operator::Multiply
+        | lexer::Operator::Divide
+        | lexer::Operator::Modulo),
+    )) = tokens.peek()
+    {
+        let op = parse_binary_operator(&op)?;
+        let precedence = *PRECEDENCE_MAP.get(&op).unwrap();
+        if precedence < min_precedence {
+            break;
+        }
+        tokens.next();
+        let right: Expression = parse_expression(tokens, precedence)?;
+        left = Expression::Binary(op, Box::new(left), Box::new(right));
+    }
+    Ok(left)
+}
+
+fn parse_factor(tokens: &mut Peekable<impl Iterator<Item = Token>>) -> Result<Expression, String> {
     match tokens.next() {
         Some(Token::Constant(constant)) => Ok(Expression::Constant(constant)),
-        Some(Token::UnaryOperator(operator)) => {
-            let expression = parse_expression(tokens)?;
+        Some(Token::Operator(
+            operator @ (lexer::Operator::Minus | lexer::Operator::Complement),
+        )) => {
+            // let expression = parse_expression(tokens)?;
+            let inner_expression = parse_factor(tokens)?;
             Ok(Expression::Unary(
                 parse_unary_operator(operator)?,
-                Box::new(expression),
+                Box::new(inner_expression),
             ))
         }
         Some(Token::OpenParenthesis) => {
-            let expression = parse_expression(tokens)?;
+            let inner_expression = parse_expression(tokens, 0)?;
             expect(Token::CloseParenthesis, tokens)?;
-            Ok(expression)
+            Ok(inner_expression)
         }
         Some(token) => Err(format!(
-            "Invalid token. Expected a constant, got: {:?}",
+            "Invalid token. Expected a factor, got: {:?}",
             token
         )),
         None => Err("Unexpected end of tokens.".to_string()),
     }
 }
 
-fn parse_unary_operator(op: lexer::UnaryOperator) -> Result<UnaryOperator, String> {
+fn parse_unary_operator(op: lexer::Operator) -> Result<UnaryOperator, String> {
     match op {
-        lexer::UnaryOperator::Negate => Ok(UnaryOperator::Negate),
-        lexer::UnaryOperator::Complement => Ok(UnaryOperator::Complement),
+        lexer::Operator::Minus => Ok(UnaryOperator::Negate),
+        lexer::Operator::Complement => Ok(UnaryOperator::Complement),
         _ => return Err(format!("Unsupported unary operator: {:?}", op)),
+    }
+}
+
+fn parse_binary_operator(op: &lexer::Operator) -> Result<BinaryOperator, String> {
+    match op {
+        lexer::Operator::Plus => Ok(BinaryOperator::Add),
+        lexer::Operator::Minus => Ok(BinaryOperator::Subtract),
+        lexer::Operator::Multiply => Ok(BinaryOperator::Multiply),
+        lexer::Operator::Divide => Ok(BinaryOperator::Divide),
+        lexer::Operator::Modulo => Ok(BinaryOperator::Modulo),
+        _ => return Err(format!("Unsupported binary operator: {:?}", op)),
     }
 }
 
@@ -121,6 +183,11 @@ fn expect(
             if token == expected {
                 Ok(())
             } else {
+                print!("Remaining: ");
+                for token in tokens {
+                    print!("{:?},", token);
+                }
+                println!();
                 Err(format!(
                     "Invalid token. Expected: {:?} got: {:?}",
                     expected, token

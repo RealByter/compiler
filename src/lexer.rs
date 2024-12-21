@@ -18,14 +18,18 @@ pub enum Token {
     OpenBrace,
     CloseBrace,
     Semicolon,
-    UnaryOperator(UnaryOperator),
+    Operator(Operator),
 }
 
 #[derive(Debug, PartialEq)]
-pub enum UnaryOperator {
-    Negate,
+pub enum Operator {
+    Minus,
     Complement,
     Decrement,
+    Plus,
+    Multiply,
+    Divide,
+    Modulo,
 }
 
 impl PartialEq for Token {
@@ -39,7 +43,7 @@ impl PartialEq for Token {
             (Token::OpenBrace, Token::OpenBrace) => true,                    
             (Token::CloseBrace, Token::CloseBrace) => true,                  
             (Token::Semicolon, Token::Semicolon) => true,            
-            (Token::UnaryOperator(o1), Token::UnaryOperator(o2)) => o1 == o2,     
+            (Token::Operator(o1), Token::Operator(o2)) => o1 == o2,
             _ => false,
         }
     } 
@@ -94,15 +98,31 @@ lazy_static::lazy_static! {
         },
         TokenPattern {
             regex: Regex::new(r"-").unwrap(),
-            token_type: |_| Token::UnaryOperator(UnaryOperator::Negate),
+            token_type: |_| Token::Operator(Operator::Minus),
         },
         TokenPattern {
             regex: Regex::new(r"~").unwrap(),
-            token_type: |_| Token::UnaryOperator(UnaryOperator::Complement),
+            token_type: |_| Token::Operator(Operator::Complement),
         },
         TokenPattern {
             regex: Regex::new(r"--").unwrap(),
-            token_type: |_| Token::UnaryOperator(UnaryOperator::Decrement),
+            token_type: |_| Token::Operator(Operator::Decrement),
+        },
+        TokenPattern {
+            regex: Regex::new(r"\+").unwrap(),
+            token_type: |_| Token::Operator(Operator::Plus),
+        },
+        TokenPattern {
+            regex: Regex::new(r"\*").unwrap(),
+            token_type: |_| Token::Operator(Operator::Multiply),
+        },
+        TokenPattern {
+            regex: Regex::new(r"/").unwrap(),
+            token_type: |_| Token::Operator(Operator::Divide),
+        },
+        TokenPattern {
+            regex: Regex::new(r"%").unwrap(),
+            token_type: |_| Token::Operator(Operator::Modulo),
         },
     ];
 }

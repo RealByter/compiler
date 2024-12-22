@@ -59,78 +59,78 @@ pub enum Reg {
 
 pub fn tacky_to_assembly(orig_instructions: Vec<tacker::Instruction>) -> Vec<Instruction> {
     let mut instructions: Vec<Instruction> = Vec::new();
-    for instruction in orig_instructions {
-        match instruction {
-            tacker::Instruction::Return(val) => {
-                instructions.push(Instruction::Mov(val_to_operand(val), Operand::Reg(Reg::AX)));
-                instructions.push(Instruction::Ret);
-            }
-            tacker::Instruction::Unary(operator, src, dst) => {
-                instructions.push(Instruction::Mov(
-                    val_to_operand(src),
-                    val_to_operand(dst.clone()),
-                ));
-                instructions.push(Instruction::Unary(
-                    match operator {
-                        tacker::UnaryOperator::Negate => UnaryOperator::Neg,
-                        tacker::UnaryOperator::Complement => UnaryOperator::Not,
-                    },
-                    val_to_operand(dst),
-                ));
-            }
-            tacker::Instruction::Binary(
-                op @ (tacker::BinaryOperator::Add
-                | tacker::BinaryOperator::Subtract
-                | tacker::BinaryOperator::Multiply
-                | tacker::BinaryOperator::And
-                | tacker::BinaryOperator::Or
-                | tacker::BinaryOperator::Xor
-                | tacker::BinaryOperator::LeftShift
-                | tacker::BinaryOperator::RightShift),
-                src1,
-                src2,
-                dst,
-            ) => {
-                instructions.push(Instruction::Mov(
-                    val_to_operand(src1),
-                    val_to_operand(dst.clone()),
-                ));
-                instructions.push(Instruction::Binary(
-                    match op {
-                        tacker::BinaryOperator::Add => BinaryOperator::Add,
-                        tacker::BinaryOperator::Subtract => BinaryOperator::Sub,
-                        tacker::BinaryOperator::Multiply => BinaryOperator::Mult,
-                        tacker::BinaryOperator::And => BinaryOperator::And,
-                        tacker::BinaryOperator::Or => BinaryOperator::Or,
-                        tacker::BinaryOperator::Xor => BinaryOperator::Xor,
-                        tacker::BinaryOperator::LeftShift => BinaryOperator::LeftShift,
-                        tacker::BinaryOperator::RightShift => BinaryOperator::RightShift,
-                        _ => panic!("Checked only for these"),
-                    },
-                    val_to_operand(src2),
-                    val_to_operand(dst),
-                ));
-            }
-            tacker::Instruction::Binary(tacker::BinaryOperator::Divide, src1, src2, dst) => {
-                instructions.push(Instruction::Mov(
-                    val_to_operand(src1),
-                    Operand::Reg(Reg::AX),
-                ));
-                instructions.push(Instruction::Cdq);
-                instructions.push(Instruction::Idiv(val_to_operand(src2)));
-                instructions.push(Instruction::Mov(Operand::Reg(Reg::AX), val_to_operand(dst)));
-            }
-            tacker::Instruction::Binary(tacker::BinaryOperator::Remainder, src1, src2, dst) => {
-                instructions.push(Instruction::Mov(
-                    val_to_operand(src1),
-                    Operand::Reg(Reg::AX),
-                ));
-                instructions.push(Instruction::Cdq);
-                instructions.push(Instruction::Idiv(val_to_operand(src2)));
-                instructions.push(Instruction::Mov(Operand::Reg(Reg::DX), val_to_operand(dst)));
-            }
-        }
-    }
+    // for instruction in orig_instructions {
+    //     match instruction {
+    //         tacker::Instruction::Return(val) => {
+    //             instructions.push(Instruction::Mov(val_to_operand(val), Operand::Reg(Reg::AX)));
+    //             instructions.push(Instruction::Ret);
+    //         }
+    //         tacker::Instruction::Unary(operator, src, dst) => {
+    //             instructions.push(Instruction::Mov(
+    //                 val_to_operand(src),
+    //                 val_to_operand(dst.clone()),
+    //             ));
+    //             instructions.push(Instruction::Unary(
+    //                 match operator {
+    //                     tacker::UnaryOperator::Negate => UnaryOperator::Neg,
+    //                     tacker::UnaryOperator::Complement => UnaryOperator::Not,
+    //                 },
+    //                 val_to_operand(dst),
+    //             ));
+    //         }
+    //         tacker::Instruction::Binary(
+    //             op @ (tacker::BinaryOperator::Add
+    //             | tacker::BinaryOperator::Subtract
+    //             | tacker::BinaryOperator::Multiply
+    //             | tacker::BinaryOperator::And
+    //             | tacker::BinaryOperator::Or
+    //             | tacker::BinaryOperator::Xor
+    //             | tacker::BinaryOperator::LeftShift
+    //             | tacker::BinaryOperator::RightShift),
+    //             src1,
+    //             src2,
+    //             dst,
+    //         ) => {
+    //             instructions.push(Instruction::Mov(
+    //                 val_to_operand(src1),
+    //                 val_to_operand(dst.clone()),
+    //             ));
+    //             instructions.push(Instruction::Binary(
+    //                 match op {
+    //                     tacker::BinaryOperator::Add => BinaryOperator::Add,
+    //                     tacker::BinaryOperator::Subtract => BinaryOperator::Sub,
+    //                     tacker::BinaryOperator::Multiply => BinaryOperator::Mult,
+    //                     tacker::BinaryOperator::And => BinaryOperator::And,
+    //                     tacker::BinaryOperator::Or => BinaryOperator::Or,
+    //                     tacker::BinaryOperator::Xor => BinaryOperator::Xor,
+    //                     tacker::BinaryOperator::LeftShift => BinaryOperator::LeftShift,
+    //                     tacker::BinaryOperator::RightShift => BinaryOperator::RightShift,
+    //                     _ => panic!("Checked only for these"),
+    //                 },
+    //                 val_to_operand(src2),
+    //                 val_to_operand(dst),
+    //             ));
+    //         }
+    //         tacker::Instruction::Binary(tacker::BinaryOperator::Divide, src1, src2, dst) => {
+    //             instructions.push(Instruction::Mov(
+    //                 val_to_operand(src1),
+    //                 Operand::Reg(Reg::AX),
+    //             ));
+    //             instructions.push(Instruction::Cdq);
+    //             instructions.push(Instruction::Idiv(val_to_operand(src2)));
+    //             instructions.push(Instruction::Mov(Operand::Reg(Reg::AX), val_to_operand(dst)));
+    //         }
+    //         tacker::Instruction::Binary(tacker::BinaryOperator::Remainder, src1, src2, dst) => {
+    //             instructions.push(Instruction::Mov(
+    //                 val_to_operand(src1),
+    //                 Operand::Reg(Reg::AX),
+    //             ));
+    //             instructions.push(Instruction::Cdq);
+    //             instructions.push(Instruction::Idiv(val_to_operand(src2)));
+    //             instructions.push(Instruction::Mov(Operand::Reg(Reg::DX), val_to_operand(dst)));
+    //         }
+    //     }
+    // }
 
     instructions
 }

@@ -189,10 +189,17 @@ fn parse_factor(tokens: &mut Peekable<impl Iterator<Item = Token>>) -> Result<Ex
             expect(Token::CloseParenthesis, tokens)?;
             Ok(inner_expression)
         }
-        Some(token) => Err(format!(
-            "Invalid token. Expected a factor, got: {:?}",
-            token
-        )),
+        Some(token) => {
+            print!("Remaining: ");
+            for token in tokens {
+                print!("{:?}", token);
+            }
+            println!();
+            Err(format!(
+                "Invalid token. Expected a factor, got: {:?}",
+                token
+            ))
+        }
         None => Err("Unexpected end of tokens.".to_string()),
     }
 }

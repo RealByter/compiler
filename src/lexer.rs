@@ -167,7 +167,7 @@ lazy_static::lazy_static! {
             token_type: |_| Token::Operator(Operator::LAnd),
         },
         TokenPattern {
-            regex: Regex::new(r"||").unwrap(),
+            regex: Regex::new(r"\|\|").unwrap(),
             token_type: |_| Token::Operator(Operator::LOr),
         },
         TokenPattern {

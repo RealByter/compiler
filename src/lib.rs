@@ -32,14 +32,14 @@ pub fn run(input_file: &str, stop_at: Option<&str>) -> io::Result<()> {
 
     // gcc::generate_assembly(&preprocessed_file, &assembly_file)?;
     let program = parser::parse_program(&mut tokens.into_iter().peekable()).unwrap();
-    println!("{:?}", program);
+    println!("{:#?}", program);
 
     if stop_at == Some("--parse") {
         return Ok(());
     }
 
     let tacky = tacker::generate_tacky(program);
-    println!("{:?}", tacky);
+    println!("{:#?}", tacky);
     if stop_at == Some("--tacky") {
         return Ok(());
     }

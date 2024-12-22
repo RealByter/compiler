@@ -31,6 +31,7 @@ pub enum Expression {
 pub enum UnaryOperator {
     Negate,
     Complement,
+    Not,
 }
 
 #[derive(Debug, PartialEq, Eq, Hash)]
@@ -45,21 +46,38 @@ pub enum BinaryOperator {
     Or,
     LeftShift,
     RightShift,
+    LAnd,
+    LOr,
+    EqualTo,
+    NotEqualTo,
+    LessThan,
+    LessOrEqual,
+    GreaterThan,
+    GreaterOrEqual,
 }
 
+const MAX_PRECEDENCE: u8 = 150;
 lazy_static! {
     static ref PRECEDENCE_MAP: HashMap<BinaryOperator, u8> = {
         let mut map = HashMap::new();
+        map.insert(BinaryOperator::Multiply, 30);
+        map.insert(BinaryOperator::Divide, 30);
+        map.insert(BinaryOperator::Modulo, 30);
         map.insert(BinaryOperator::Add, 40);
         map.insert(BinaryOperator::Subtract, 40);
-        map.insert(BinaryOperator::Multiply, 50);
-        map.insert(BinaryOperator::Divide, 50);
-        map.insert(BinaryOperator::Modulo, 50);
-        map.insert(BinaryOperator::Xor, 30);
-        map.insert(BinaryOperator::And, 30);
-        map.insert(BinaryOperator::Or, 20);
         map.insert(BinaryOperator::LeftShift, 50);
         map.insert(BinaryOperator::RightShift, 50);
+        map.insert(BinaryOperator::LessThan, 60);
+        map.insert(BinaryOperator::LessOrEqual, 60);
+        map.insert(BinaryOperator::GreaterThan, 60);
+        map.insert(BinaryOperator::GreaterOrEqual, 60);
+        map.insert(BinaryOperator::EqualTo, 70);
+        map.insert(BinaryOperator::NotEqualTo, 70);
+        map.insert(BinaryOperator::And, 80);
+        map.insert(BinaryOperator::Xor, 90);
+        map.insert(BinaryOperator::Or, 100);
+        map.insert(BinaryOperator::LAnd, 110);
+        map.insert(BinaryOperator::LOr, 120);
         map
     };
 }
@@ -109,14 +127,14 @@ fn parse_statement(
     tokens: &mut Peekable<impl Iterator<Item = Token>>,
 ) -> Result<Statement, String> {
     expect(Token::Keyword(Keyword::Return), tokens)?;
-    let expression = parse_expression(tokens, 0)?;
+    let expression = parse_expression(tokens, MAX_PRECEDENCE)?;
     expect(Token::Semicolon, tokens)?;
     Ok(Statement::Return(expression))
 }
 
 fn parse_expression(
     tokens: &mut Peekable<impl Iterator<Item = Token>>,
-    min_precedence: u8,
+    max_precedence: u8,
 ) -> Result<Expression, String> {
     let mut left = parse_factor(tokens)?;
     while let Some(Token::Operator(
@@ -129,16 +147,24 @@ fn parse_expression(
         | lexer::Operator::Or
         | lexer::Operator::Xor
         | lexer::Operator::ShiftLeft
-        | lexer::Operator::ShiftRight),
+        | lexer::Operator::ShiftRight
+        | lexer::Operator::LAnd
+        | lexer::Operator::LOr
+        | lexer::Operator::EqualTo
+        | lexer::Operator::NotEqualTo
+        | lexer::Operator::LessThan
+        | lexer::Operator::LessOrEqual
+        | lexer::Operator::GreaterThan
+        | lexer::Operator::GreaterOrEqual),
     )) = tokens.peek()
     {
         let op = parse_binary_operator(&op)?;
         let precedence = *PRECEDENCE_MAP.get(&op).unwrap();
-        if precedence < min_precedence {
+        if precedence >= max_precedence {
             break;
         }
         tokens.next();
-        let right: Expression = parse_expression(tokens, precedence + 1)?;
+        let right: Expression = parse_expression(tokens, precedence - 1)?;
         left = Expression::Binary(op, Box::new(left), Box::new(right));
     }
     Ok(left)
@@ -148,7 +174,8 @@ fn parse_factor(tokens: &mut Peekable<impl Iterator<Item = Token>>) -> Result<Ex
     match tokens.next() {
         Some(Token::Constant(constant)) => Ok(Expression::Constant(constant)),
         Some(Token::Operator(
-            operator @ (lexer::Operator::Minus | lexer::Operator::Complement),
+            operator
+            @ (lexer::Operator::Minus | lexer::Operator::Complement | lexer::Operator::Not),
         )) => {
             // let expression = parse_expression(tokens)?;
             let inner_expression = parse_factor(tokens)?;
@@ -158,7 +185,7 @@ fn parse_factor(tokens: &mut Peekable<impl Iterator<Item = Token>>) -> Result<Ex
             ))
         }
         Some(Token::OpenParenthesis) => {
-            let inner_expression = parse_expression(tokens, 0)?;
+            let inner_expression = parse_expression(tokens, MAX_PRECEDENCE)?;
             expect(Token::CloseParenthesis, tokens)?;
             Ok(inner_expression)
         }
@@ -174,6 +201,7 @@ fn parse_unary_operator(op: lexer::Operator) -> Result<UnaryOperator, String> {
     match op {
         lexer::Operator::Minus => Ok(UnaryOperator::Negate),
         lexer::Operator::Complement => Ok(UnaryOperator::Complement),
+        lexer::Operator::Not => Ok(UnaryOperator::Not),
         _ => return Err(format!("Unsupported unary operator: {:?}", op)),
     }
 }
@@ -190,6 +218,14 @@ fn parse_binary_operator(op: &lexer::Operator) -> Result<BinaryOperator, String>
         lexer::Operator::Or => Ok(BinaryOperator::Or),
         lexer::Operator::ShiftLeft => Ok(BinaryOperator::LeftShift),
         lexer::Operator::ShiftRight => Ok(BinaryOperator::RightShift),
+        lexer::Operator::LAnd => Ok(BinaryOperator::LAnd),
+        lexer::Operator::LOr => Ok(BinaryOperator::LOr),
+        lexer::Operator::EqualTo => Ok(BinaryOperator::EqualTo),
+        lexer::Operator::NotEqualTo => Ok(BinaryOperator::NotEqualTo),
+        lexer::Operator::LessThan => Ok(BinaryOperator::LessThan),
+        lexer::Operator::LessOrEqual => Ok(BinaryOperator::LessOrEqual),
+        lexer::Operator::GreaterThan => Ok(BinaryOperator::GreaterThan),
+        lexer::Operator::GreaterOrEqual => Ok(BinaryOperator::GreaterOrEqual),
         _ => return Err(format!("Unsupported binary operator: {:?}", op)),
     }
 }

@@ -35,23 +35,32 @@ pub enum Operator {
     Xor,
     ShiftLeft,
     ShiftRight,
+    Not,
+    LAnd,
+    LOr,
+    EqualTo,
+    NotEqualTo,
+    LessThan,
+    GreaterThan,
+    LessOrEqual,
+    GreaterOrEqual,
 }
 
 impl PartialEq for Token {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
-            (Token::Keyword(k1 ), Token::Keyword(k2)) => k1 == k2,
-            (Token::Identifier(_), Token::Identifier(_)) => true,        
+            (Token::Keyword(k1), Token::Keyword(k2)) => k1 == k2,
+            (Token::Identifier(_), Token::Identifier(_)) => true,
             (Token::Constant(_), Token::Constant(_)) => true,
-            (Token::OpenParenthesis, Token::OpenParenthesis) => true,        
-            (Token::CloseParenthesis, Token::CloseParenthesis) => true,      
-            (Token::OpenBrace, Token::OpenBrace) => true,                    
-            (Token::CloseBrace, Token::CloseBrace) => true,                  
-            (Token::Semicolon, Token::Semicolon) => true,            
+            (Token::OpenParenthesis, Token::OpenParenthesis) => true,
+            (Token::CloseParenthesis, Token::CloseParenthesis) => true,
+            (Token::OpenBrace, Token::OpenBrace) => true,
+            (Token::CloseBrace, Token::CloseBrace) => true,
+            (Token::Semicolon, Token::Semicolon) => true,
             (Token::Operator(o1), Token::Operator(o2)) => o1 == o2,
             _ => false,
         }
-    } 
+    }
 }
 
 struct TokenPattern {
@@ -149,6 +158,42 @@ lazy_static::lazy_static! {
             regex: Regex::new(r">>").unwrap(),
             token_type: |_| Token::Operator(Operator::ShiftRight),
         },
+        TokenPattern {
+            regex: Regex::new(r"!").unwrap(),
+            token_type: |_| Token::Operator(Operator::Not)
+        },
+        TokenPattern {
+            regex: Regex::new(r"&&").unwrap(),
+            token_type: |_| Token::Operator(Operator::LAnd),
+        },
+        TokenPattern {
+            regex: Regex::new(r"||").unwrap(),
+            token_type: |_| Token::Operator(Operator::LOr),
+        },
+        TokenPattern {
+            regex: Regex::new(r"==").unwrap(),
+            token_type: |_| Token::Operator(Operator::EqualTo),
+        },
+        TokenPattern {
+            regex: Regex::new(r"!=").unwrap(),
+            token_type: |_| Token::Operator(Operator::NotEqualTo),
+        },
+        TokenPattern {
+            regex: Regex::new(r"<").unwrap(),
+            token_type: |_| Token::Operator(Operator::LessThan),
+        },
+        TokenPattern {
+            regex: Regex::new(r">").unwrap(),
+            token_type: |_| Token::Operator(Operator::GreaterThan),
+        },
+        TokenPattern {
+            regex: Regex::new(r"<=").unwrap(),
+            token_type: |_| Token::Operator(Operator::LessOrEqual),
+        },
+        TokenPattern {
+            regex: Regex::new(r">=").unwrap(),
+            token_type: |_| Token::Operator(Operator::GreaterOrEqual),
+        },
     ];
 }
 
@@ -165,10 +210,8 @@ fn match_token(input: &str) -> Option<(Token, usize)> {
                         if length > *longest_length {
                             longest_match = Some((token, length))
                         }
-                    },
-                    None => {
-                        longest_match = Some((token, length))
                     }
+                    None => longest_match = Some((token, length)),
                 }
             }
         }

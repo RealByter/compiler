@@ -7,6 +7,7 @@ mod generator;
 mod lexer;
 mod parser;
 mod tacker;
+mod variable_resolver;
 
 pub fn run(input_file: &str, stop_at: Option<&str>) -> io::Result<()> {
     let base_name = match input_file.rfind('.') {
@@ -33,10 +34,16 @@ pub fn run(input_file: &str, stop_at: Option<&str>) -> io::Result<()> {
     // gcc::generate_assembly(&preprocessed_file, &assembly_file)?;
     let program = parser::parse_program(&mut tokens.into_iter().peekable()).unwrap();
     println!("{:#?}", program);
-
     if stop_at == Some("--parse") {
         return Ok(());
     }
+
+    let program = variable_resolver::resolve_variables(program).unwrap();
+    println!("{:#?}", program);
+    if stop_at == Some("--validate") {
+        return Ok(());
+    }
+    
 
     let tacky = tacker::generate_tacky(program);
     println!("{:#?}", tacky);

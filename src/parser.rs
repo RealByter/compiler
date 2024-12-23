@@ -12,19 +12,35 @@ pub struct Program {
 #[derive(Debug)]
 pub struct FunctionDefinition {
     pub identifier: String,
-    pub statement: Statement,
+    pub body: Vec<BlockItem>,
+}
+
+#[derive(Debug)]
+pub enum BlockItem {
+    S(Statement),
+    D(Declaration),
 }
 
 #[derive(Debug)]
 pub enum Statement {
     Return(Expression),
+    Expression(Expression),
+    Null,
+}
+
+#[derive(Debug)]
+pub enum Declaration {
+    Initialized(String, Expression),
+    Uninitialized(String),
 }
 
 #[derive(Debug)]
 pub enum Expression {
+    Var(String),
     Constant(i64),
     Unary(UnaryOperator, Box<Expression>),
     Binary(BinaryOperator, Box<Expression>, Box<Expression>),
+    Assignment(Box<Expression>, Box<Expression>),
 }
 
 #[derive(Debug)]
@@ -54,6 +70,7 @@ pub enum BinaryOperator {
     LessOrEqual,
     GreaterThan,
     GreaterOrEqual,
+    Assign,
 }
 
 const MAX_PRECEDENCE: u8 = 150;
@@ -78,6 +95,7 @@ lazy_static! {
         map.insert(BinaryOperator::Or, 100);
         map.insert(BinaryOperator::LAnd, 110);
         map.insert(BinaryOperator::LOr, 120);
+        map.insert(BinaryOperator::Assign, 140);
         map
     };
 }
@@ -103,13 +121,26 @@ fn parse_function(
     expect(Token::Keyword(Keyword::Void), tokens)?;
     expect(Token::CloseParenthesis, tokens)?;
     expect(Token::OpenBrace, tokens)?;
-    let statement = parse_statement(tokens)?;
+    let mut body: Vec<BlockItem> = Vec::new();
+    while match tokens.peek() {
+        Some(Token::CloseBrace) | None => false,
+        _ => true,
+    } {
+        body.push(parse_block_item(tokens)?);
+    }
     expect(Token::CloseBrace, tokens)?;
 
-    Ok(FunctionDefinition {
-        identifier,
-        statement,
-    })
+    Ok(FunctionDefinition { identifier, body })
+}
+
+fn parse_block_item(
+    tokens: &mut Peekable<impl Iterator<Item = Token>>,
+) -> Result<BlockItem, String> {
+    if let Some(Token::Keyword(Keyword::Int)) = tokens.peek() {
+        Ok(BlockItem::D(parse_declaration(tokens)?))
+    } else {
+        Ok(BlockItem::S(parse_statement(tokens)?))
+    }
 }
 
 fn parse_identifier(tokens: &mut Peekable<impl Iterator<Item = Token>>) -> Result<String, String> {
@@ -123,13 +154,43 @@ fn parse_identifier(tokens: &mut Peekable<impl Iterator<Item = Token>>) -> Resul
     }
 }
 
+fn parse_declaration(
+    tokens: &mut Peekable<impl Iterator<Item = Token>>,
+) -> Result<Declaration, String> {
+    expect(Token::Keyword(Keyword::Int), tokens)?;
+    let identifier = parse_identifier(tokens)?;
+    if let Some(Token::Operator(lexer::Operator::Assign)) = tokens.peek() {
+        tokens.next();
+        let expression = parse_expression(tokens, MAX_PRECEDENCE)?;
+        expect(Token::Semicolon, tokens)?;
+        Ok(Declaration::Initialized(identifier, expression))
+    } else {
+        expect(Token::Semicolon, tokens)?;
+        Ok(Declaration::Uninitialized(identifier))
+    }
+}
+
 fn parse_statement(
     tokens: &mut Peekable<impl Iterator<Item = Token>>,
 ) -> Result<Statement, String> {
-    expect(Token::Keyword(Keyword::Return), tokens)?;
-    let expression = parse_expression(tokens, MAX_PRECEDENCE)?;
-    expect(Token::Semicolon, tokens)?;
-    Ok(Statement::Return(expression))
+    match tokens.peek() {
+        Some(Token::Keyword(Keyword::Return)) => {
+            tokens.next();
+            let expression = parse_expression(tokens, MAX_PRECEDENCE)?;
+            expect(Token::Semicolon, tokens)?;
+            Ok(Statement::Return(expression))
+        }
+        Some(Token::Semicolon) => {
+            tokens.next();
+            Ok(Statement::Null)
+        }
+        Some(_) => {
+            let expression = parse_expression(tokens, MAX_PRECEDENCE)?;
+            expect(Token::Semicolon, tokens)?;
+            Ok(Statement::Expression(expression))
+        }
+        None => return Err("Unexpected end of tokens.".to_string()),
+    }
 }
 
 fn parse_expression(
@@ -155,7 +216,8 @@ fn parse_expression(
         | lexer::Operator::LessThan
         | lexer::Operator::LessOrEqual
         | lexer::Operator::GreaterThan
-        | lexer::Operator::GreaterOrEqual),
+        | lexer::Operator::GreaterOrEqual
+        | lexer::Operator::Assign),
     )) = tokens.peek()
     {
         let op = parse_binary_operator(&op)?;
@@ -163,9 +225,15 @@ fn parse_expression(
         if precedence >= max_precedence {
             break;
         }
-        tokens.next();
-        let right: Expression = parse_expression(tokens, precedence - 1)?;
-        left = Expression::Binary(op, Box::new(left), Box::new(right));
+        if op == BinaryOperator::Assign {
+            tokens.next();
+            let right = parse_expression(tokens, precedence)?;
+            left = Expression::Assignment(Box::new(left), Box::new(right));
+        } else {
+            tokens.next();
+            let right: Expression = parse_expression(tokens, precedence - 1)?;
+            left = Expression::Binary(op, Box::new(left), Box::new(right));
+        }
     }
     Ok(left)
 }
@@ -189,6 +257,7 @@ fn parse_factor(tokens: &mut Peekable<impl Iterator<Item = Token>>) -> Result<Ex
             expect(Token::CloseParenthesis, tokens)?;
             Ok(inner_expression)
         }
+        Some(Token::Identifier(id)) => Ok(Expression::Var(id)),
         Some(token) => {
             print!("Remaining: ");
             for token in tokens {
@@ -233,6 +302,7 @@ fn parse_binary_operator(op: &lexer::Operator) -> Result<BinaryOperator, String>
         lexer::Operator::LessOrEqual => Ok(BinaryOperator::LessOrEqual),
         lexer::Operator::GreaterThan => Ok(BinaryOperator::GreaterThan),
         lexer::Operator::GreaterOrEqual => Ok(BinaryOperator::GreaterOrEqual),
+        lexer::Operator::Assign => Ok(BinaryOperator::Assign),
         _ => return Err(format!("Unsupported binary operator: {:?}", op)),
     }
 }

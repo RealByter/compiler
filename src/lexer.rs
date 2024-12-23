@@ -44,6 +44,7 @@ pub enum Operator {
     GreaterThan,
     LessOrEqual,
     GreaterOrEqual,
+    Assign,
 }
 
 impl PartialEq for Token {
@@ -194,6 +195,10 @@ lazy_static::lazy_static! {
             regex: Regex::new(r">=").unwrap(),
             token_type: |_| Token::Operator(Operator::GreaterOrEqual),
         },
+        TokenPattern {
+            regex: Regex::new(r"=").unwrap(),
+            token_type: |_| Token::Operator(Operator::Assign),
+        }
     ];
 }
 

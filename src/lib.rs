@@ -52,7 +52,7 @@ pub fn run(input_file: &str, stop_at: Option<&str>) -> io::Result<()> {
     }
 
     let assembly = assembler::assemble(tacky);
-    println!("{:?}", assembly);
+    println!("{:#?}", assembly);
     
     if stop_at == Some("--codegen") {
         return Ok(());

@@ -58,7 +58,7 @@ fn resolve_expression(
         Expression::Assignment(left, right) => {
             match *left {
                 Expression::Var(_) => {}
-                _ => return Err("Invalid lvalid".to_string()),
+                _ => return Err("Invalid lvalue".to_string()),
             };
             Ok(Expression::Assignment(
                 Box::new(resolve_expression(*left, variable_map)?),

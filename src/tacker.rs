@@ -145,38 +145,55 @@ fn emit_tacky_value(expression: parser::Expression, instructions: &mut Vec<Instr
             let src1 = emit_tacky_value(*operand1, instructions);
             let src2 = emit_tacky_value(*operand2, instructions);
             let dst = Val::Var(make_temp_name());
-            let operator = match operator {
-                parser::BinaryOperator::Add => BinaryOperator::Add,
-                parser::BinaryOperator::Subtract => BinaryOperator::Subtract,
-                parser::BinaryOperator::Multiply => BinaryOperator::Multiply,
-                parser::BinaryOperator::Divide => BinaryOperator::Divide,
-                parser::BinaryOperator::Modulo => BinaryOperator::Remainder,
-                parser::BinaryOperator::Xor => BinaryOperator::Xor,
-                parser::BinaryOperator::And => BinaryOperator::And,
-                parser::BinaryOperator::Or => BinaryOperator::Or,
-                parser::BinaryOperator::LeftShift => BinaryOperator::LeftShift,
-                parser::BinaryOperator::RightShift => BinaryOperator::RightShift,
-                parser::BinaryOperator::EqualTo => BinaryOperator::EqualTo,
-                parser::BinaryOperator::NotEqualTo => BinaryOperator::NotEqual,
-                parser::BinaryOperator::LessThan => BinaryOperator::LessThan,
-                parser::BinaryOperator::LessOrEqual => BinaryOperator::LessOrEqual,
-                parser::BinaryOperator::GreaterThan => BinaryOperator::GreaterThan,
-                parser::BinaryOperator::GreaterOrEqual => BinaryOperator::GreaterOrEqual,
-                _ => panic!("Shouldn't reach here"),
-            };
+            let operator = convert_parser_bin_to_tacky(operator);
             instructions.push(Instruction::Binary(operator, src1, src2, dst.clone()));
             dst
         }
         parser::Expression::Var(var) => Val::Var(var),
-        parser::Expression::Assignment(exp1, exp2) => {
+        parser::Expression::Assignment(op, exp1, exp2) => {
             if let parser::Expression::Var(var) = *exp1 {
-                let result = emit_tacky_value(*exp2, instructions);
-                instructions.push(Instruction::Copy(result, Val::Var(var.clone())));
+                let right_result = emit_tacky_value(*exp2, instructions);
+
+                if let Some(op) = op {
+                    let left_result = Val::Var(var.clone());
+                    let temp_result = Val::Var(make_temp_name());
+                    instructions.push(Instruction::Binary(
+                        convert_parser_bin_to_tacky(op),
+                        left_result,
+                        right_result,
+                        temp_result.clone(),
+                    ));
+                    instructions.push(Instruction::Copy(temp_result, Val::Var(var.clone())));
+                } else {
+                    instructions.push(Instruction::Copy(right_result, Val::Var(var.clone())));
+                }
                 Val::Var(var)
             } else {
                 panic!("Shouldn't have an invalid lvalue at this point");
             }
         }
+    }
+}
+
+fn convert_parser_bin_to_tacky(op: parser::BinaryOperator) -> BinaryOperator {
+    match op {
+        parser::BinaryOperator::Add => BinaryOperator::Add,
+        parser::BinaryOperator::Subtract => BinaryOperator::Subtract,
+        parser::BinaryOperator::Multiply => BinaryOperator::Multiply,
+        parser::BinaryOperator::Divide => BinaryOperator::Divide,
+        parser::BinaryOperator::Modulo => BinaryOperator::Remainder,
+        parser::BinaryOperator::Xor => BinaryOperator::Xor,
+        parser::BinaryOperator::And => BinaryOperator::And,
+        parser::BinaryOperator::Or => BinaryOperator::Or,
+        parser::BinaryOperator::LeftShift => BinaryOperator::LeftShift,
+        parser::BinaryOperator::RightShift => BinaryOperator::RightShift,
+        parser::BinaryOperator::EqualTo => BinaryOperator::EqualTo,
+        parser::BinaryOperator::NotEqualTo => BinaryOperator::NotEqual,
+        parser::BinaryOperator::LessThan => BinaryOperator::LessThan,
+        parser::BinaryOperator::LessOrEqual => BinaryOperator::LessOrEqual,
+        parser::BinaryOperator::GreaterThan => BinaryOperator::GreaterThan,
+        parser::BinaryOperator::GreaterOrEqual => BinaryOperator::GreaterOrEqual,
+        _ => panic!("Shouldn't reach here"),
     }
 }
 

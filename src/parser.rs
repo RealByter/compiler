@@ -109,6 +109,8 @@ lazy_static! {
         map.insert(BinaryOperator::Or, 100);
         map.insert(BinaryOperator::LAnd, 110);
         map.insert(BinaryOperator::LOr, 120);
+        map.insert(BinaryOperator::TernaryIf, 130);
+        map.insert(BinaryOperator::TernaryElse, 130);
         map.insert(BinaryOperator::Assign, 140);
         map.insert(BinaryOperator::AddAssign, 140);
         map.insert(BinaryOperator::SubAssign, 140);
@@ -266,8 +268,7 @@ fn parse_expression(
         | lexer::Operator::XorAssign
         | lexer::Operator::LeftShiftAssign
         | lexer::Operator::RightShiftAssign
-        | lexer::Operator::TernaryIf
-        | lexer::Operator::TernaryElse),
+        | lexer::Operator::TernaryIf),
     )) = tokens.peek()
     {
         let op = parse_binary_operator(&op)?;
@@ -310,7 +311,7 @@ fn parse_expression(
                 left = Expression::Assignment(Some(op), Box::new(left), Box::new(right));
             }
             BinaryOperator::TernaryIf => {
-                tokens.next();
+                println!("next is: {:#?}", tokens.next().unwrap());
                 let middle = parse_expression(tokens, MAX_PRECEDENCE)?;
                 expect(Token::Operator(lexer::Operator::TernaryElse), tokens)?;
                 let right = parse_expression(tokens, precedence)?;
@@ -318,7 +319,7 @@ fn parse_expression(
             }
             // Left to right associativity
             _ => {
-                tokens.next();
+                println!("next is: {:#?}", tokens.next().unwrap());
                 let right: Expression = parse_expression(tokens, precedence - 1)?;
                 left = Expression::Binary(op, Box::new(left), Box::new(right));
             }

@@ -2,7 +2,7 @@
 main:
 	pushq %rbp
 	movq %rsp, %rbp
-	subq $80, %rsp
+	subq $108, %rsp
 	movl $10, -4(%rbp)
 	movl $3, -8(%rbp)
 	movl -8(%rbp), %r11d
@@ -74,14 +74,51 @@ main:
 	notl -72(%rbp)
 	movl -72(%rbp), %r10d
 	movl %r10d, -76(%rbp)
+	cmpl $0, -4(%rbp)
+	je .Llabel_if_end.5
+	cmpl $15, -4(%rbp)
+	movl $0, -80(%rbp)
+	setg -80(%rbp)
+	cmpl $0, -80(%rbp)
+	je .Llabel_false.6
+	movl $1, -84(%rbp)
+	jmp .Llabel_if_end.7
+.Llabel_false.6:
+	movl $2, -84(%rbp)
+.Llabel_if_end.7:
+.Llabel_if_end.5:
+	cmpl $1, -84(%rbp)
+	movl $0, -88(%rbp)
+	sete -88(%rbp)
+	cmpl $0, -88(%rbp)
+	je .Llabel_false.8
+	movl -84(%rbp), %r10d
+	movl %r10d, -92(%rbp)
+	movl -92(%rbp), %r11d
+	imull $2, %r11d
+	movl %r11d, -92(%rbp)
+	movl -92(%rbp), %r10d
+	movl %r10d, -96(%rbp)
+	jmp .Llabel_cond_end.9
+.Llabel_false.8:
+	movl -84(%rbp), %r10d
+	movl %r10d, -100(%rbp)
+	movl -100(%rbp), %r11d
+	imull $3, %r11d
+	movl %r11d, -100(%rbp)
+	movl -100(%rbp), %r10d
+	movl %r10d, -96(%rbp)
+.Llabel_cond_end.9:
+	movl -96(%rbp), %r10d
+	movl %r10d, -104(%rbp)
 	movl -4(%rbp), %r10d
-	movl %r10d, -80(%rbp)
-	movl -80(%rbp), %r11d
+	movl %r10d, -108(%rbp)
+	movl -108(%rbp), %r11d
 	imull $20, %r11d
-	movl %r11d, -80(%rbp)
-	movl -80(%rbp), %r10d
+	movl %r11d, -108(%rbp)
+	movl -108(%rbp), %r10d
 	movl %r10d, -4(%rbp)
-	movl -4(%rbp), %eax
+	movl -104(%rbp), %eax
 	movq %rbp, %rsp
 	popq %rbp
 	ret

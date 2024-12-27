@@ -15,9 +15,9 @@ int main(void)
         else
             z = 2;
 
-    int w = (z > 1) ? (z * 2) : (z * 3);
+    int w = (z == 1) ? (z * 2) : (z * 3);
 
     y *= 20;
 
-    return x;
+    return w;
 }

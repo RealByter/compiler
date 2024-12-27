@@ -67,28 +67,54 @@ pub fn generate_tacky(program: parser::Program) -> Program {
     let instructions = &mut tacky_program.function.instructions;
     for block_item in program.function.body {
         match block_item {
-            parser::BlockItem::S(statement) => match statement {
-                parser::Statement::Return(expression) => {
-                    let val = emit_tacky_value(expression, instructions);
-                    instructions.push(Instruction::Return(val));
-                }
-                parser::Statement::Expression(expression) => {
-                    emit_tacky_value(expression, instructions);
-                }
-                parser::Statement::Null => {}
-            },
-            parser::BlockItem::D(declaration) => match declaration {
-                parser::Declaration::Uninitialized(_) => {}
-                parser::Declaration::Initialized(var, expression) => {
-                    let result = emit_tacky_value(expression, instructions);
-                    instructions.push(Instruction::Copy(result, Val::Var(var)));
-                }
-            },
+            parser::BlockItem::S(statement) => emit_tacky_statement(statement, instructions),
+            parser::BlockItem::D(declaration) => emit_tacky_delcaration(declaration, instructions),
         }
     }
     instructions.push(Instruction::Return(Val::Constant(0)));
 
     tacky_program
+}
+
+fn emit_tacky_statement(statement: parser::Statement, instructions: &mut Vec<Instruction>) {
+    match statement {
+        parser::Statement::Return(expression) => {
+            let val = emit_tacky_value(expression, instructions);
+            instructions.push(Instruction::Return(val));
+        }
+        parser::Statement::Expression(expression) => {
+            emit_tacky_value(expression, instructions);
+        }
+        parser::Statement::Null => {}
+        parser::Statement::If(cond, if_body, else_body) => {
+            let false_label = make_label_name("false");
+            let end_label = make_label_name("if_end");
+
+            let condition = emit_tacky_value(cond, instructions);
+            if let Some(else_body) = else_body {
+                instructions.push(Instruction::JumpIfZero(condition, false_label.clone()));
+                emit_tacky_statement(*if_body, instructions);
+                instructions.push(Instruction::Jump(end_label.clone()));
+                instructions.push(Instruction::Label(false_label));
+                emit_tacky_statement(*else_body, instructions);
+                instructions.push(Instruction::Label(end_label));
+            } else {
+                instructions.push(Instruction::JumpIfZero(condition, end_label.clone()));
+                emit_tacky_statement(*if_body, instructions);
+                instructions.push(Instruction::Label(end_label));
+            }
+        }
+    }
+}
+
+fn emit_tacky_delcaration(declaration: parser::Declaration, instructions: &mut Vec<Instruction>) {
+    match declaration {
+        parser::Declaration::Uninitialized(_) => {}
+        parser::Declaration::Initialized(var, expression) => {
+            let result = emit_tacky_value(expression, instructions);
+            instructions.push(Instruction::Copy(result, Val::Var(var)));
+        }
+    }
 }
 
 fn emit_tacky_value(expression: parser::Expression, instructions: &mut Vec<Instruction>) -> Val {
@@ -171,6 +197,23 @@ fn emit_tacky_value(expression: parser::Expression, instructions: &mut Vec<Instr
             } else {
                 panic!("Shouldn't have an invalid lvalue at this point");
             }
+        }
+        parser::Expression::Conditional(left, middle, right) => {
+            let result = Val::Var(make_temp_name());
+            let false_label = make_label_name("false");
+            let end_label = make_label_name("cond_end");
+
+            let condition = emit_tacky_value(*left, instructions);
+            instructions.push(Instruction::JumpIfZero(condition, false_label.clone()));
+            let if_value = emit_tacky_value(*middle, instructions);
+            instructions.push(Instruction::Copy(if_value, result.clone()));
+            instructions.push(Instruction::Jump(end_label.clone()));
+            instructions.push(Instruction::Label(false_label));
+            let else_value = emit_tacky_value(*right, instructions);
+            instructions.push(Instruction::Copy(else_value, result.clone()));
+            instructions.push(Instruction::Label(end_label));
+
+            result
         }
     }
 }

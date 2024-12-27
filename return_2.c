@@ -9,14 +9,11 @@ int main(void)
     ;
 
     int z;
-    if(y > 15) 
-    {
-        z = 1;
-    }
-    else
-    {
-        z = 2;
-    }
+    if(y)
+        if(y > 15) 
+            z = 1;
+        else
+            z = 2;
 
     int w = (z > 1) ? (z * 2) : (z * 3);
 

@@ -26,6 +26,7 @@ pub enum Statement {
     Return(Expression),
     Expression(Expression),
     Null,
+    If(Expression, Box<Statement>, Option<Box<Statement>>), // condition, then, ?else
 }
 
 #[derive(Debug)]
@@ -41,6 +42,7 @@ pub enum Expression {
     Unary(UnaryOperator, Box<Expression>),
     Binary(BinaryOperator, Box<Expression>, Box<Expression>),
     Assignment(Option<BinaryOperator>, Box<Expression>, Box<Expression>),
+    Conditional(Box<Expression>, Box<Expression>, Box<Expression>), // condition, then, else
 }
 
 #[derive(Debug)]
@@ -81,6 +83,8 @@ pub enum BinaryOperator {
     XorAssign,
     LeftShiftAssign,
     RightShiftAssign,
+    TernaryIf,
+    TernaryElse,
 }
 
 const MAX_PRECEDENCE: u8 = 150;
@@ -204,6 +208,20 @@ fn parse_statement(
             tokens.next();
             Ok(Statement::Null)
         }
+        Some(Token::Keyword(Keyword::If)) => {
+            tokens.next();
+            expect(Token::OpenParenthesis, tokens)?;
+            let condition = parse_expression(tokens, MAX_PRECEDENCE)?;
+            expect(Token::CloseParenthesis, tokens)?;
+            let then = Box::new(parse_statement(tokens)?);
+            let optional_else = if let Some(Token::Keyword(Keyword::Else)) = tokens.peek() {
+                tokens.next();
+                Some(Box::new(parse_statement(tokens)?))
+            } else {
+                None
+            };
+            Ok(Statement::If(condition, then, optional_else))
+        }
         Some(_) => {
             let expression = parse_expression(tokens, MAX_PRECEDENCE)?;
             expect(Token::Semicolon, tokens)?;
@@ -247,7 +265,9 @@ fn parse_expression(
         | lexer::Operator::OrAssign
         | lexer::Operator::XorAssign
         | lexer::Operator::LeftShiftAssign
-        | lexer::Operator::RightShiftAssign),
+        | lexer::Operator::RightShiftAssign
+        | lexer::Operator::TernaryIf
+        | lexer::Operator::TernaryElse),
     )) = tokens.peek()
     {
         let op = parse_binary_operator(&op)?;
@@ -288,6 +308,13 @@ fn parse_expression(
                 tokens.next();
                 let right = parse_expression(tokens, precedence)?;
                 left = Expression::Assignment(Some(op), Box::new(left), Box::new(right));
+            }
+            BinaryOperator::TernaryIf => {
+                tokens.next();
+                let middle = parse_expression(tokens, MAX_PRECEDENCE)?;
+                expect(Token::Operator(lexer::Operator::TernaryElse), tokens)?;
+                let right = parse_expression(tokens, precedence)?;
+                left = Expression::Conditional(Box::new(left), Box::new(middle), Box::new(right));
             }
             // Left to right associativity
             _ => {
@@ -375,6 +402,8 @@ fn parse_binary_operator(op: &lexer::Operator) -> Result<BinaryOperator, String>
         lexer::Operator::XorAssign => Ok(BinaryOperator::XorAssign),
         lexer::Operator::LeftShiftAssign => Ok(BinaryOperator::LeftShiftAssign),
         lexer::Operator::RightShiftAssign => Ok(BinaryOperator::RightShiftAssign),
+        lexer::Operator::TernaryIf => Ok(BinaryOperator::TernaryIf),
+        lexer::Operator::TernaryElse => Ok(BinaryOperator::TernaryElse),
         _ => return Err(format!("Unsupported binary operator: {:?}", op)),
     }
 }

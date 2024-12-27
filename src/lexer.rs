@@ -20,8 +20,6 @@ pub enum Token {
     OpenBrace,
     CloseBrace,
     Semicolon,
-    QuestionMark,
-    Colon,
     Operator(Operator),
 }
 
@@ -59,6 +57,8 @@ pub enum Operator {
     XorAssign,
     LeftShiftAssign,
     RightShiftAssign,
+    TernaryIf,
+    TernaryElse
     // Discarded because lookahead is not supported - will be added when I make my own state machine to parse tokens
     // PrefixIncrement,
     // PrefixDecrement,
@@ -77,8 +77,6 @@ impl PartialEq for Token {
             (Token::OpenBrace, Token::OpenBrace) => true,
             (Token::CloseBrace, Token::CloseBrace) => true,
             (Token::Semicolon, Token::Semicolon) => true,
-            (Token::QuestionMark, Token::QuestionMark) => true,
-            (Token::Colon, Token::Colon) => true,
             (Token::Operator(o1), Token::Operator(o2)) => o1 == o2,
             _ => false,
         }
@@ -286,11 +284,11 @@ lazy_static::lazy_static! {
         // },
         TokenPattern {
             regex: Regex::new(r"\?").unwrap(),
-            token_type: |_| Token::QuestionMark,
+            token_type: |_| Token::Operator(Operator::TernaryIf),
         },
         TokenPattern {
             regex: Regex::new(r":").unwrap(),
-            token_type: |_| Token::Colon,
+            token_type: |_| Token::Operator(Operator::TernaryElse),
         },
     ];
 }

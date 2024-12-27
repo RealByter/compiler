@@ -365,6 +365,16 @@ fn parse_binary_operator(op: &lexer::Operator) -> Result<BinaryOperator, String>
         lexer::Operator::GreaterThan => Ok(BinaryOperator::GreaterThan),
         lexer::Operator::GreaterOrEqual => Ok(BinaryOperator::GreaterOrEqual),
         lexer::Operator::Assign => Ok(BinaryOperator::Assign),
+        lexer::Operator::AddAssign => Ok(BinaryOperator::AddAssign),
+        lexer::Operator::SubAssign => Ok(BinaryOperator::SubAssign),
+        lexer::Operator::MulAssign => Ok(BinaryOperator::MulAssign),
+        lexer::Operator::DivAssign => Ok(BinaryOperator::DivAssign),
+        lexer::Operator::ModAssign => Ok(BinaryOperator::ModAssign),
+        lexer::Operator::AndAssign => Ok(BinaryOperator::AndAssign),
+        lexer::Operator::OrAssign => Ok(BinaryOperator::OrAssign),
+        lexer::Operator::XorAssign => Ok(BinaryOperator::XorAssign),
+        lexer::Operator::LeftShiftAssign => Ok(BinaryOperator::LeftShiftAssign),
+        lexer::Operator::RightShiftAssign => Ok(BinaryOperator::RightShiftAssign),
         _ => return Err(format!("Unsupported binary operator: {:?}", op)),
     }
 }

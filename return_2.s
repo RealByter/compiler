@@ -2,7 +2,7 @@
 main:
 	pushq %rbp
 	movq %rsp, %rbp
-	subq $76, %rsp
+	subq $80, %rsp
 	movl $10, -4(%rbp)
 	movl $3, -8(%rbp)
 	movl -8(%rbp), %r11d
@@ -74,8 +74,14 @@ main:
 	notl -72(%rbp)
 	movl -72(%rbp), %r10d
 	movl %r10d, -76(%rbp)
-	movl $20, -4(%rbp)
-	movl -76(%rbp), %eax
+	movl -4(%rbp), %r10d
+	movl %r10d, -80(%rbp)
+	movl -80(%rbp), %r11d
+	imull $20, %r11d
+	movl %r11d, -80(%rbp)
+	movl -80(%rbp), %r10d
+	movl %r10d, -4(%rbp)
+	movl -4(%rbp), %eax
 	movq %rbp, %rsp
 	popq %rbp
 	ret

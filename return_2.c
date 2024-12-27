@@ -9,11 +9,16 @@ int main(void)
     ;
 
     int z;
-    if(y)
-        if(y > 15) 
+    if (y)
+    {
+        if (y > 15)
             z = 1;
         else
+        {
             z = 2;
+            z = 4;
+        }
+    }
 
     int w = (z == 1) ? (z * 2) : (z * 3);
 

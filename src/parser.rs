@@ -149,7 +149,6 @@ fn parse_function(
     expect(Token::OpenParenthesis, tokens)?;
     expect(Token::Keyword(Keyword::Void), tokens)?;
     expect(Token::CloseParenthesis, tokens)?;
-    expect(Token::OpenBrace, tokens)?;
     let body = parse_block(tokens)?;
 
     Ok(FunctionDefinition { identifier, body })
@@ -250,6 +249,7 @@ fn parse_expression(
     tokens: &mut Peekable<impl Iterator<Item = Token>>,
     max_precedence: u8,
 ) -> Result<Expression, String> {
+    println!("working on {:?}", tokens.peek().unwrap()); 
     let mut left = parse_factor(tokens)?;
     while let Some(Token::Operator(
         op @ (lexer::Operator::Plus
@@ -324,7 +324,7 @@ fn parse_expression(
                 left = Expression::Assignment(Some(op), Box::new(left), Box::new(right));
             }
             BinaryOperator::TernaryIf => {
-                println!("next is: {:#?}", tokens.next().unwrap());
+                tokens.next();
                 let middle = parse_expression(tokens, MAX_PRECEDENCE)?;
                 expect(Token::Operator(lexer::Operator::TernaryElse), tokens)?;
                 let right = parse_expression(tokens, precedence)?;
@@ -332,7 +332,7 @@ fn parse_expression(
             }
             // Left to right associativity
             _ => {
-                println!("next is: {:#?}", tokens.next().unwrap());
+                tokens.next();
                 let right: Expression = parse_expression(tokens, precedence - 1)?;
                 left = Expression::Binary(op, Box::new(left), Box::new(right));
             }

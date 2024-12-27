@@ -85,6 +85,7 @@ main:
 	jmp .Llabel_if_end.7
 .Llabel_false.6:
 	movl $2, -84(%rbp)
+	movl $4, -84(%rbp)
 .Llabel_if_end.7:
 .Llabel_if_end.5:
 	cmpl $1, -84(%rbp)

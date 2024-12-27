@@ -65,15 +65,19 @@ pub fn generate_tacky(program: parser::Program) -> Program {
     };
 
     let instructions = &mut tacky_program.function.instructions;
-    for block_item in program.function.body {
+    emit_tacky_block(program.function.body, instructions);
+    instructions.push(Instruction::Return(Val::Constant(0)));
+
+    tacky_program
+}
+
+fn emit_tacky_block(block: parser::Block, instructions: &mut Vec<Instruction>) {
+    for block_item in block {
         match block_item {
             parser::BlockItem::S(statement) => emit_tacky_statement(statement, instructions),
             parser::BlockItem::D(declaration) => emit_tacky_delcaration(declaration, instructions),
         }
     }
-    instructions.push(Instruction::Return(Val::Constant(0)));
-
-    tacky_program
 }
 
 fn emit_tacky_statement(statement: parser::Statement, instructions: &mut Vec<Instruction>) {
@@ -103,6 +107,9 @@ fn emit_tacky_statement(statement: parser::Statement, instructions: &mut Vec<Ins
                 emit_tacky_statement(*if_body, instructions);
                 instructions.push(Instruction::Label(end_label));
             }
+        }
+        parser::Statement::Compound(block) => {
+            emit_tacky_block(block, instructions);
         }
     }
 }

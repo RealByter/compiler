@@ -8,7 +8,7 @@ int main(void)
 
     ;
 
-    y = 20;
+    y *= 20;
 
-    return x;
+    return y;
 }

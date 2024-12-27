@@ -71,6 +71,16 @@ pub enum BinaryOperator {
     GreaterThan,
     GreaterOrEqual,
     Assign,
+    AddAssign,
+    SubAssign,
+    MulAssign,
+    DivAssign,
+    ModAssign,
+    AndAssign,
+    OrAssign,
+    XorAssign,
+    LeftShiftAssign,
+    RightShiftAssign,
 }
 
 const MAX_PRECEDENCE: u8 = 150;
@@ -96,6 +106,16 @@ lazy_static! {
         map.insert(BinaryOperator::LAnd, 110);
         map.insert(BinaryOperator::LOr, 120);
         map.insert(BinaryOperator::Assign, 140);
+        map.insert(BinaryOperator::AddAssign, 140);
+        map.insert(BinaryOperator::SubAssign, 140);
+        map.insert(BinaryOperator::MulAssign, 140);
+        map.insert(BinaryOperator::DivAssign, 140);
+        map.insert(BinaryOperator::ModAssign, 140);
+        map.insert(BinaryOperator::AndAssign, 140);
+        map.insert(BinaryOperator::OrAssign, 140);
+        map.insert(BinaryOperator::XorAssign, 140);
+        map.insert(BinaryOperator::LeftShiftAssign, 140);
+        map.insert(BinaryOperator::RightShiftAssign, 140);
         map
     };
 }
@@ -217,7 +237,17 @@ fn parse_expression(
         | lexer::Operator::LessOrEqual
         | lexer::Operator::GreaterThan
         | lexer::Operator::GreaterOrEqual
-        | lexer::Operator::Assign),
+        | lexer::Operator::Assign
+        | lexer::Operator::AddAssign
+        | lexer::Operator::SubAssign
+        | lexer::Operator::MulAssign
+        | lexer::Operator::DivAssign
+        | lexer::Operator::ModAssign
+        | lexer::Operator::AndAssign
+        | lexer::Operator::OrAssign
+        | lexer::Operator::XorAssign
+        | lexer::Operator::LeftShiftAssign
+        | lexer::Operator::RightShiftAssign),
     )) = tokens.peek()
     {
         let op = parse_binary_operator(&op)?;
@@ -225,14 +255,29 @@ fn parse_expression(
         if precedence >= max_precedence {
             break;
         }
-        if op == BinaryOperator::Assign {
-            tokens.next();
-            let right = parse_expression(tokens, precedence)?;
-            left = Expression::Assignment(Box::new(left), Box::new(right));
-        } else {
-            tokens.next();
-            let right: Expression = parse_expression(tokens, precedence - 1)?;
-            left = Expression::Binary(op, Box::new(left), Box::new(right));
+        match op {
+            // Right to left associativity
+            BinaryOperator::Assign
+            | BinaryOperator::AddAssign
+            | BinaryOperator::SubAssign
+            | BinaryOperator::MulAssign
+            | BinaryOperator::DivAssign
+            | BinaryOperator::ModAssign
+            | BinaryOperator::AndAssign
+            | BinaryOperator::OrAssign
+            | BinaryOperator::XorAssign
+            | BinaryOperator::LeftShiftAssign
+            | BinaryOperator::RightShiftAssign => {
+                tokens.next();
+                let right = parse_expression(tokens, precedence)?;
+                left = Expression::Assignment(Box::new(left), Box::new(right));
+            }
+            // Left to right associativity
+            _ => {
+                tokens.next();
+                let right: Expression = parse_expression(tokens, precedence - 1)?;
+                left = Expression::Binary(op, Box::new(left), Box::new(right));
+            }
         }
     }
     Ok(left)

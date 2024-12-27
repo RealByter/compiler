@@ -45,6 +45,16 @@ pub enum Operator {
     LessOrEqual,
     GreaterOrEqual,
     Assign,
+    AddAssign,
+    SubAssign,
+    MulAssign,
+    DivAssign,
+    ModAssign,
+    AndAssign,
+    OrAssign,
+    XorAssign,
+    LeftShiftAssign,
+    RightShiftAssign,
 }
 
 impl PartialEq for Token {
@@ -198,7 +208,47 @@ lazy_static::lazy_static! {
         TokenPattern {
             regex: Regex::new(r"=").unwrap(),
             token_type: |_| Token::Operator(Operator::Assign),
-        }
+        },
+        TokenPattern {
+            regex: Regex::new(r"\+=").unwrap(),
+            token_type: |_| Token::Operator(Operator::AddAssign),
+        },
+        TokenPattern {
+            regex: Regex::new(r"-=").unwrap(),
+            token_type: |_| Token::Operator(Operator::SubAssign),
+        },
+        TokenPattern {
+            regex: Regex::new(r"\*=").unwrap(),
+            token_type: |_| Token::Operator(Operator::MulAssign),
+        },
+        TokenPattern {
+            regex: Regex::new(r"/=").unwrap(),
+            token_type: |_| Token::Operator(Operator::DivAssign),
+        },
+        TokenPattern {
+            regex: Regex::new(r"%=").unwrap(),
+            token_type: |_| Token::Operator(Operator::ModAssign),
+        },
+        TokenPattern {
+            regex: Regex::new(r"&=").unwrap(),
+            token_type: |_| Token::Operator(Operator::AndAssign),
+        },
+        TokenPattern {
+            regex: Regex::new(r"\|=").unwrap(),
+            token_type: |_| Token::Operator(Operator::OrAssign),
+        },
+        TokenPattern {
+            regex: Regex::new(r"\^=").unwrap(),
+            token_type: |_| Token::Operator(Operator::XorAssign),
+        },
+        TokenPattern {
+            regex: Regex::new(r"<<=").unwrap(),
+            token_type: |_| Token::Operator(Operator::LeftShiftAssign),
+        },
+        TokenPattern {
+            regex: Regex::new(r">>=").unwrap(),
+            token_type: |_| Token::Operator(Operator::RightShiftAssign),
+        },
     ];
 }
 

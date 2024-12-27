@@ -55,6 +55,11 @@ pub enum Operator {
     XorAssign,
     LeftShiftAssign,
     RightShiftAssign,
+    // Discarded because lookahead is not supported - will be added when I make my own state machine to parse tokens
+    // PrefixIncrement,
+    // PrefixDecrement,
+    // PostfixIncrement,
+    // PostfixDecrement,
 }
 
 impl PartialEq for Token {
@@ -249,6 +254,22 @@ lazy_static::lazy_static! {
             regex: Regex::new(r">>=").unwrap(),
             token_type: |_| Token::Operator(Operator::RightShiftAssign),
         },
+        // TokenPattern {
+        //     regex: Regex::new(r"(?<!\w)\+\+").unwrap(),
+        //     token_type: |_| Token::Operator(Operator::PrefixIncrement),
+        // },
+        // TokenPattern {
+        //     regex: Regex::new(r"(?<!\w)--").unwrap(),
+        //     token_type: |_| Token::Operator(Operator::PrefixDecrement),
+        // },
+        // TokenPattern {
+        //     regex: Regex::new(r"(?<=\w)\+\+(?!\w)").unwrap(),
+        //     token_type: |_| Token::Operator(Operator::PostfixIncrement),
+        // },
+        // TokenPattern {
+        //     regex: Regex::new(r"(?<=\w)--(?!\w)").unwrap(),
+        //     token_type: |_| Token::Operator(Operator::PostfixDecrement),
+        // },
     ];
 }
 

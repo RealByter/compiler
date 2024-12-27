@@ -10,5 +10,5 @@ int main(void)
 
     y *= 20;
 
-    return y;
+    return x;
 }

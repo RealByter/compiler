@@ -6,6 +6,8 @@ pub enum Keyword {
     Void,
     Int,
     Return,
+    If,
+    Else,
 }
 
 #[derive(Debug)]
@@ -18,6 +20,8 @@ pub enum Token {
     OpenBrace,
     CloseBrace,
     Semicolon,
+    QuestionMark,
+    Colon,
     Operator(Operator),
 }
 
@@ -73,6 +77,8 @@ impl PartialEq for Token {
             (Token::OpenBrace, Token::OpenBrace) => true,
             (Token::CloseBrace, Token::CloseBrace) => true,
             (Token::Semicolon, Token::Semicolon) => true,
+            (Token::QuestionMark, Token::QuestionMark) => true,
+            (Token::Colon, Token::Colon) => true,
             (Token::Operator(o1), Token::Operator(o2)) => o1 == o2,
             _ => false,
         }
@@ -97,6 +103,14 @@ lazy_static::lazy_static! {
         TokenPattern{
             regex: Regex::new(r"\bvoid\b").unwrap(),
             token_type: |_| Token::Keyword(Keyword::Void),
+        },
+        TokenPattern {
+            regex: Regex::new(r"\bif\b").unwrap(),
+            token_type: |_| Token::Keyword(Keyword::If),
+        },
+        TokenPattern {
+            regex: Regex::new(r"\belse\b").unwrap(),
+            token_type: |_| Token::Keyword(Keyword::Else),
         },
         TokenPattern {
             regex: Regex::new(r"[a-zA-Z_]\w*\b").unwrap(),
@@ -270,6 +284,14 @@ lazy_static::lazy_static! {
         //     regex: Regex::new(r"(?<=\w)--(?!\w)").unwrap(),
         //     token_type: |_| Token::Operator(Operator::PostfixDecrement),
         // },
+        TokenPattern {
+            regex: Regex::new(r"\?").unwrap(),
+            token_type: |_| Token::QuestionMark,
+        },
+        TokenPattern {
+            regex: Regex::new(r":").unwrap(),
+            token_type: |_| Token::Colon,
+        },
     ];
 }
 

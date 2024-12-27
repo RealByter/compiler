@@ -83,6 +83,11 @@ fn resolve_expression(
             Box::new(resolve_expression(*exp, variable_map)?),
         )),
         Expression::Constant(imm) => Ok(Expression::Constant(imm)),
+        Expression::Conditional(left, middle, right) => Ok(Expression::Conditional(
+            Box::new(resolve_expression(*left, variable_map)?),
+            Box::new(resolve_expression(*middle, variable_map)?),
+            Box::new(resolve_expression(*right, variable_map)?),
+        )),
     }
 }
 
@@ -99,6 +104,14 @@ fn resolve_statement(
             expression,
             variable_map,
         )?)),
+        Statement::If(cond, if_body, else_body) => Ok(Statement::If(
+            resolve_expression(cond, variable_map)?,
+            Box::new(resolve_statement(*if_body, variable_map)?),
+            match else_body {
+                Some(else_body) => Some(Box::new(resolve_statement(*else_body, variable_map)?)),
+                None => None,
+            },
+        )),
         Statement::Null => Ok(Statement::Null),
     }
 }

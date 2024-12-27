@@ -55,12 +55,13 @@ fn resolve_expression(
     variable_map: &mut HashMap<String, String>,
 ) -> Result<Expression, String> {
     match expression {
-        Expression::Assignment(left, right) => {
+        Expression::Assignment(op, left, right) => {
             match *left {
                 Expression::Var(_) => {}
                 _ => return Err("Invalid lvalue".to_string()),
             };
             Ok(Expression::Assignment(
+                op,
                 Box::new(resolve_expression(*left, variable_map)?),
                 Box::new(resolve_expression(*right, variable_map)?),
             ))

@@ -15,7 +15,7 @@ pub struct FunctionDefinition {
     pub body: Block,
 }
 
-type Block = Vec<BlockItem>;
+pub type Block = Vec<BlockItem>;
 
 #[derive(Debug)]
 pub enum BlockItem {

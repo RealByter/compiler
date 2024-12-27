@@ -1,29 +1,36 @@
 use crate::parser::*;
 use std::collections::HashMap;
 
+struct VariableEntry {
+    unique_name: String,
+    from_current_block: bool,
+}
+type VariableMap = HashMap<String, VariableEntry>;
+
 pub fn resolve_variables(mut program: Program) -> Result<Program, String> {
-    let mut variable_map: HashMap<String, String> = HashMap::new();
+    let mut variable_map: VariableMap = HashMap::new();
+    program.function.body = resolve_block(program.function.body, &mut variable_map)?;
+    Ok(program)
+}
+
+fn resolve_block(block: Block, variable_map: &mut VariableMap) -> Result<Block, String> {
     let mut body: Vec<BlockItem> = Vec::new();
 
-    for block_item in program.function.body {
+    for block_item in block {
         body.push(match block_item {
             BlockItem::D(declaration) => {
-                BlockItem::D(resolve_declaration(declaration, &mut variable_map)?)
+                BlockItem::D(resolve_declaration(declaration, variable_map)?)
             }
-            BlockItem::S(statement) => {
-                BlockItem::S(resolve_statement(statement, &mut variable_map)?)
-            }
+            BlockItem::S(statement) => BlockItem::S(resolve_statement(statement, variable_map)?),
         })
     }
 
-    program.function.body = body;
-
-    Ok(program)
+    Ok(body)
 }
 
 fn resolve_declaration(
     declaration: Declaration,
-    variable_map: &mut HashMap<String, String>,
+    variable_map: &mut VariableMap,
 ) -> Result<Declaration, String> {
     let mut expression: Option<Expression> = None;
     let name = match declaration {
@@ -34,12 +41,18 @@ fn resolve_declaration(
         Declaration::Uninitialized(name) => name,
     };
 
-    if variable_map.contains_key(&name) {
+    if variable_map.contains_key(&name) && variable_map.get(&name).unwrap().from_current_block {
         return Err("Duplicate variable declaration.".to_string());
     }
 
     let unique_name = make_unique_name(name.clone());
-    variable_map.insert(name, unique_name.clone());
+    variable_map.insert(
+        name,
+        VariableEntry {
+            unique_name: unique_name.clone(),
+            from_current_block: true,
+        },
+    );
     if let Some(exp) = expression {
         return Ok(Declaration::Initialized(
             unique_name,
@@ -52,7 +65,7 @@ fn resolve_declaration(
 
 fn resolve_expression(
     expression: Expression,
-    variable_map: &mut HashMap<String, String>,
+    variable_map: &mut VariableMap,
 ) -> Result<Expression, String> {
     match expression {
         Expression::Assignment(op, left, right) => {
@@ -68,7 +81,9 @@ fn resolve_expression(
         }
         Expression::Var(name) => {
             if variable_map.contains_key(&name) {
-                Ok(Expression::Var(variable_map.get(&name).unwrap().clone()))
+                Ok(Expression::Var(
+                    variable_map.get(&name).unwrap().unique_name.clone(),
+                ))
             } else {
                 Err("Undeclared variable".to_string())
             }
@@ -93,7 +108,7 @@ fn resolve_expression(
 
 fn resolve_statement(
     statement: Statement,
-    variable_map: &mut HashMap<String, String>,
+    variable_map: &mut VariableMap,
 ) -> Result<Statement, String> {
     match statement {
         Statement::Return(expression) => Ok(Statement::Return(resolve_expression(
@@ -113,7 +128,28 @@ fn resolve_statement(
             },
         )),
         Statement::Null => Ok(Statement::Null),
+        Statement::Compound(block) => {
+            let mut new_scope_variables = copy_variable_map(variable_map);
+            Ok(Statement::Compound(resolve_block(
+                block,
+                &mut new_scope_variables,
+            )?))
+        }
     }
+}
+
+fn copy_variable_map(variable_map: &VariableMap) -> VariableMap {
+    let mut new_map: VariableMap = HashMap::new();
+    for (key, value) in variable_map.iter() {
+        new_map.insert(
+            key.clone(),
+            VariableEntry {
+                unique_name: value.unique_name.clone(),
+                from_current_block: false,
+            },
+        );
+    }
+    new_map
 }
 
 static mut USER_COUNTER: i64 = -1;

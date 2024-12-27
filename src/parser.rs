@@ -12,8 +12,10 @@ pub struct Program {
 #[derive(Debug)]
 pub struct FunctionDefinition {
     pub identifier: String,
-    pub body: Vec<BlockItem>,
+    pub body: Block,
 }
+
+type Block = Vec<BlockItem>;
 
 #[derive(Debug)]
 pub enum BlockItem {
@@ -27,6 +29,7 @@ pub enum Statement {
     Expression(Expression),
     Null,
     If(Expression, Box<Statement>, Option<Box<Statement>>), // condition, then, ?else
+    Compound(Block),
 }
 
 #[derive(Debug)]
@@ -147,16 +150,22 @@ fn parse_function(
     expect(Token::Keyword(Keyword::Void), tokens)?;
     expect(Token::CloseParenthesis, tokens)?;
     expect(Token::OpenBrace, tokens)?;
-    let mut body: Vec<BlockItem> = Vec::new();
+    let body = parse_block(tokens)?;
+
+    Ok(FunctionDefinition { identifier, body })
+}
+
+fn parse_block(tokens: &mut Peekable<impl Iterator<Item = Token>>) -> Result<Block, String> {
+    expect(Token::OpenBrace, tokens)?;
+    let mut block: Block = Vec::new();
     while match tokens.peek() {
         Some(Token::CloseBrace) | None => false,
         _ => true,
     } {
-        body.push(parse_block_item(tokens)?);
+        block.push(parse_block_item(tokens)?);
     }
     expect(Token::CloseBrace, tokens)?;
-
-    Ok(FunctionDefinition { identifier, body })
+    Ok(block)
 }
 
 fn parse_block_item(
@@ -223,6 +232,10 @@ fn parse_statement(
                 None
             };
             Ok(Statement::If(condition, then, optional_else))
+        }
+        Some(Token::OpenBrace) => {
+            let block = parse_block(tokens)?;
+            Ok(Statement::Compound(block))
         }
         Some(_) => {
             let expression = parse_expression(tokens, MAX_PRECEDENCE)?;

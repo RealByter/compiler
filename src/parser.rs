@@ -40,7 +40,7 @@ pub enum Expression {
     Constant(i64),
     Unary(UnaryOperator, Box<Expression>),
     Binary(BinaryOperator, Box<Expression>, Box<Expression>),
-    Assignment(Box<Expression>, Box<Expression>),
+    Assignment(Option<BinaryOperator>, Box<Expression>, Box<Expression>),
 }
 
 #[derive(Debug)]
@@ -257,8 +257,12 @@ fn parse_expression(
         }
         match op {
             // Right to left associativity
-            BinaryOperator::Assign
-            | BinaryOperator::AddAssign
+            BinaryOperator::Assign => {
+                tokens.next();
+                let right = parse_expression(tokens, precedence)?;
+                left = Expression::Assignment(None, Box::new(left), Box::new(right));
+            }
+            BinaryOperator::AddAssign
             | BinaryOperator::SubAssign
             | BinaryOperator::MulAssign
             | BinaryOperator::DivAssign
@@ -268,9 +272,22 @@ fn parse_expression(
             | BinaryOperator::XorAssign
             | BinaryOperator::LeftShiftAssign
             | BinaryOperator::RightShiftAssign => {
+                let op = match op {
+                    BinaryOperator::AddAssign => BinaryOperator::Add,
+                    BinaryOperator::SubAssign => BinaryOperator::Subtract,
+                    BinaryOperator::MulAssign => BinaryOperator::Multiply,
+                    BinaryOperator::DivAssign => BinaryOperator::Divide,
+                    BinaryOperator::ModAssign => BinaryOperator::Modulo,
+                    BinaryOperator::AndAssign => BinaryOperator::And,
+                    BinaryOperator::OrAssign => BinaryOperator::Or,
+                    BinaryOperator::XorAssign => BinaryOperator::Xor,
+                    BinaryOperator::LeftShiftAssign => BinaryOperator::LeftShift,
+                    BinaryOperator::RightShiftAssign => BinaryOperator::RightShift,
+                    _ => return Err("Shouldn't reach here".to_string()),
+                };
                 tokens.next();
                 let right = parse_expression(tokens, precedence)?;
-                left = Expression::Assignment(Box::new(left), Box::new(right));
+                left = Expression::Assignment(Some(op), Box::new(left), Box::new(right));
             }
             // Left to right associativity
             _ => {

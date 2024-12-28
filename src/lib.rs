@@ -8,6 +8,7 @@ mod lexer;
 mod parser;
 mod tacker;
 mod variable_resolver;
+mod loop_labeler;
 
 pub fn run(input_file: &str, stop_at: Option<&str>) -> io::Result<()> {
     let base_name = match input_file.rfind('.') {
@@ -40,6 +41,7 @@ pub fn run(input_file: &str, stop_at: Option<&str>) -> io::Result<()> {
 
     let program = variable_resolver::resolve_variables(program).unwrap();
     println!("{:#?}", program);
+    let program = loop_labeler::label_loops(program).unwrap();
     if stop_at == Some("--validate") {
         return Ok(());
     }

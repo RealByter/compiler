@@ -30,6 +30,23 @@ pub enum Statement {
     Null,
     If(Expression, Box<Statement>, Option<Box<Statement>>), // condition, then, ?else
     Compound(Block),
+    Break(Option<String>),
+    Continue(Option<String>),
+    While(Expression, Box<Statement>, Option<String>),   // condition, body, label
+    DoWhile(Box<Statement>, Expression, Option<String>), // body, condition, label
+    For(
+        ForInit,
+        Option<Expression>,
+        Option<Expression>,
+        Box<Statement>,
+        Option<String>
+    ), // init, condition, post, body, label
+}
+
+#[derive(Debug)]
+pub enum ForInit {
+    InitDeclaration(Declaration),
+    InitExpression(Option<Expression>),
 }
 
 #[derive(Debug)]
@@ -236,6 +253,53 @@ fn parse_statement(
             let block = parse_block(tokens)?;
             Ok(Statement::Compound(block))
         }
+        Some(Token::Keyword(Keyword::Break)) => {
+            tokens.next();
+            expect(Token::Semicolon, tokens)?;
+            Ok(Statement::Break(None))
+        }
+        Some(Token::Keyword(Keyword::Continue)) => {
+            tokens.next();
+            expect(Token::Semicolon, tokens)?;
+            Ok(Statement::Continue(None))
+        }
+        Some(Token::Keyword(Keyword::While)) => {
+            tokens.next();
+            expect(Token::OpenParenthesis, tokens)?;
+            let condition = parse_expression(tokens, MAX_PRECEDENCE)?;
+            expect(Token::CloseParenthesis, tokens)?;
+            let body = Box::new(parse_statement(tokens)?);
+            Ok(Statement::While(condition, body, None))
+        }
+        Some(Token::Keyword(Keyword::Do)) => {
+            tokens.next();
+            let body = Box::new(parse_statement(tokens)?);
+            expect(Token::Keyword(Keyword::While), tokens)?;
+            expect(Token::OpenParenthesis, tokens)?;
+            let condition = parse_expression(tokens, MAX_PRECEDENCE)?;
+            expect(Token::CloseParenthesis, tokens)?;
+            expect(Token::Semicolon, tokens)?;
+            Ok(Statement::DoWhile(body, condition, None))
+        }
+        Some(Token::Keyword(Keyword::For)) => {
+            tokens.next();
+            expect(Token::OpenParenthesis, tokens)?;
+            let init = parse_for_init(tokens)?;
+            let condition = if let Some(Token::Semicolon) = tokens.peek() {
+                None
+            } else {
+                Some(parse_expression(tokens, MAX_PRECEDENCE)?)
+            };
+            expect(Token::Semicolon, tokens)?;
+            let post = if let Some(Token::CloseParenthesis) = tokens.peek() {
+                None
+            } else {
+                Some(parse_expression(tokens, MAX_PRECEDENCE)?)
+            };
+            expect(Token::CloseParenthesis, tokens)?;
+            let body = Box::new(parse_statement(tokens)?);
+            Ok(Statement::For(init, condition, post, body, None))
+        }
         Some(_) => {
             let expression = parse_expression(tokens, MAX_PRECEDENCE)?;
             expect(Token::Semicolon, tokens)?;
@@ -245,11 +309,25 @@ fn parse_statement(
     }
 }
 
+fn parse_for_init(tokens: &mut Peekable<impl Iterator<Item = Token>>) -> Result<ForInit, String> {
+    if let Some(Token::Keyword(Keyword::Int)) = tokens.peek() {
+        Ok(ForInit::InitDeclaration(parse_declaration(tokens)?))
+    } else {
+        Ok(ForInit::InitExpression(
+            if let Some(Token::Semicolon) = tokens.peek() {
+                None
+            } else {
+                Some(parse_expression(tokens, MAX_PRECEDENCE)?)
+            },
+        ))
+    }
+}
+
 fn parse_expression(
     tokens: &mut Peekable<impl Iterator<Item = Token>>,
     max_precedence: u8,
 ) -> Result<Expression, String> {
-    println!("working on {:?}", tokens.peek().unwrap()); 
+    println!("working on {:?}", tokens.peek().unwrap());
     let mut left = parse_factor(tokens)?;
     while let Some(Token::Operator(
         op @ (lexer::Operator::Plus

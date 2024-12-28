@@ -135,6 +135,53 @@ fn resolve_statement(
                 &mut new_scope_variables,
             )?))
         }
+        Statement::Break(label) => Ok(Statement::Break(label)),
+        Statement::Continue(label) => Ok(Statement::Continue(label)),
+        Statement::While(cond, body, label) => Ok(Statement::While(
+            resolve_expression(cond, variable_map)?,
+            Box::new(resolve_statement(*body, variable_map)?),
+            label,
+        )),
+        Statement::DoWhile(body, cond, label) => Ok(Statement::DoWhile(
+            Box::new(resolve_statement(*body, variable_map)?),
+            resolve_expression(cond, variable_map)?,
+            label,
+        )),
+        Statement::For(init, cond, post, body, label) => {
+            let mut new_scope_variables = copy_variable_map(variable_map);
+            Ok(Statement::For(
+                resolve_for_init(init, &mut new_scope_variables)?,
+                match cond {
+                    Some(cond) => Some(resolve_expression(cond, &mut new_scope_variables)?),
+                    None => None,
+                },
+                match post {
+                    Some(post) => Some(resolve_expression(post, &mut new_scope_variables)?),
+                    None => None,
+                },
+                Box::new(resolve_statement(*body, &mut new_scope_variables)?),
+                label
+            ))
+        }
+    }
+}
+
+fn resolve_for_init(init: ForInit, variable_map: &mut VariableMap) -> Result<ForInit, String> {
+    match init {
+        ForInit::InitDeclaration(declaration) => Ok(ForInit::InitDeclaration(resolve_declaration(
+            declaration,
+            variable_map,
+        )?)),
+        ForInit::InitExpression(expression) => {
+            if let Some(expression) = expression {
+                Ok(ForInit::InitExpression(Some(resolve_expression(
+                    expression,
+                    variable_map,
+                )?)))
+            } else {
+                Ok(ForInit::InitExpression(None))
+            }
+        }
     }
 }
 

@@ -111,6 +111,66 @@ fn emit_tacky_statement(statement: parser::Statement, instructions: &mut Vec<Ins
         parser::Statement::Compound(block) => {
             emit_tacky_block(block, instructions);
         }
+        parser::Statement::DoWhile(body, cond, label) => {
+            let label = label.unwrap();
+            let start_label = format!("start_{}", label);
+            let break_label = format!("break_{}", label);
+            let continue_label = format!("continue_{}", label);
+
+            instructions.push(Instruction::Label(start_label.clone()));
+            emit_tacky_statement(*body, instructions);
+            instructions.push(Instruction::Label(continue_label));
+            let condition = emit_tacky_value(cond, instructions);
+            instructions.push(Instruction::JumpIfNotZero(condition, start_label));
+            instructions.push(Instruction::Label(break_label));
+        }
+        parser::Statement::While(cond, body, label) => {
+            let label = label.unwrap();
+            let break_label = format!("break_{}", label);
+            let continue_label = format!("continue_{}", label);
+
+            instructions.push(Instruction::Label(continue_label.clone()));
+            let condition = emit_tacky_value(cond, instructions);
+            instructions.push(Instruction::JumpIfZero(condition, break_label.clone()));
+            emit_tacky_statement(*body, instructions);
+            instructions.push(Instruction::Jump(continue_label));
+            instructions.push(Instruction::Label(break_label));
+        }
+        parser::Statement::For(init, cond, post, body, label) => {
+            let label = label.unwrap();
+            let start_label = format!("start_{}", label);
+            let break_label = format!("break_{}", label);
+            let continue_label = format!("continue_{}", label);
+
+            match init {
+                parser::ForInit::InitDeclaration(declaration) => {
+                    emit_tacky_delcaration(declaration, instructions);
+                }
+                parser::ForInit::InitExpression(expression) => {
+                    if let Some(expression) = expression {
+                        emit_tacky_value(expression, instructions);
+                    }
+                }
+            }
+            instructions.push(Instruction::Label(start_label.clone()));
+            if let Some(cond) = cond {
+                let condition = emit_tacky_value(cond, instructions);
+                instructions.push(Instruction::JumpIfZero(condition, break_label.clone()));
+            }
+            emit_tacky_statement(*body, instructions);
+            instructions.push(Instruction::Label(continue_label.clone()));
+            if let Some(post) = post {
+                emit_tacky_value(post, instructions);
+            }
+            instructions.push(Instruction::Jump(start_label));
+            instructions.push(Instruction::Label(break_label));
+        }
+        parser::Statement::Break(label) => {
+            instructions.push(Instruction::Jump(format!("break_{}", label.unwrap())));
+        }
+        parser::Statement::Continue(label) => {
+            instructions.push(Instruction::Jump(format!("continue_{}", label.unwrap())));
+        }
     }
 }
 

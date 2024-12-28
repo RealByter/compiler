@@ -23,7 +23,22 @@ int main(void)
 
     int w = (z == 1) ? (z * 2) : (z * 3);
 
+    while(z > 0)
+    {
+        z = z - 1;
+    }
+
+    for(int i = 0; i < w; i = i + 1)
+    {
+        z = z + 1;
+    }
+
+    do
+    {
+        z = z - 1;
+    } while (z > 0);
+
     y *= 20;
 
-    return y;
+    return z;
 }

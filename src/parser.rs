@@ -313,8 +313,9 @@ fn parse_for_init(tokens: &mut Peekable<impl Iterator<Item = Token>>) -> Result<
     if let Some(Token::Keyword(Keyword::Int)) = tokens.peek() {
         Ok(ForInit::InitDeclaration(parse_declaration(tokens)?))
     } else {
+        let token = tokens.next();
         Ok(ForInit::InitExpression(
-            if let Some(Token::Semicolon) = tokens.peek() {
+            if let Some(Token::Semicolon) = token {
                 None
             } else {
                 Some(parse_expression(tokens, MAX_PRECEDENCE)?)

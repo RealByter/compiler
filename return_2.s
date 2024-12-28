@@ -2,7 +2,7 @@
 main:
 	pushq %rbp
 	movq %rsp, %rbp
-	subq $108, %rsp
+	subq $112, %rsp
 	movl $10, -4(%rbp)
 	movl $3, -8(%rbp)
 	movl -8(%rbp), %r11d
@@ -87,39 +87,40 @@ main:
 	movl $2, -84(%rbp)
 	movl $4, -84(%rbp)
 .Llabel_if_end.7:
+	movl $5, -88(%rbp)
 .Llabel_if_end.5:
 	cmpl $1, -84(%rbp)
-	movl $0, -88(%rbp)
-	sete -88(%rbp)
-	cmpl $0, -88(%rbp)
+	movl $0, -92(%rbp)
+	sete -92(%rbp)
+	cmpl $0, -92(%rbp)
 	je .Llabel_false.8
 	movl -84(%rbp), %r10d
-	movl %r10d, -92(%rbp)
-	movl -92(%rbp), %r11d
-	imull $2, %r11d
-	movl %r11d, -92(%rbp)
-	movl -92(%rbp), %r10d
 	movl %r10d, -96(%rbp)
+	movl -96(%rbp), %r11d
+	imull $2, %r11d
+	movl %r11d, -96(%rbp)
+	movl -96(%rbp), %r10d
+	movl %r10d, -100(%rbp)
 	jmp .Llabel_cond_end.9
 .Llabel_false.8:
 	movl -84(%rbp), %r10d
-	movl %r10d, -100(%rbp)
-	movl -100(%rbp), %r11d
-	imull $3, %r11d
-	movl %r11d, -100(%rbp)
-	movl -100(%rbp), %r10d
-	movl %r10d, -96(%rbp)
-.Llabel_cond_end.9:
-	movl -96(%rbp), %r10d
 	movl %r10d, -104(%rbp)
-	movl -4(%rbp), %r10d
+	movl -104(%rbp), %r11d
+	imull $3, %r11d
+	movl %r11d, -104(%rbp)
+	movl -104(%rbp), %r10d
+	movl %r10d, -100(%rbp)
+.Llabel_cond_end.9:
+	movl -100(%rbp), %r10d
 	movl %r10d, -108(%rbp)
-	movl -108(%rbp), %r11d
+	movl -4(%rbp), %r10d
+	movl %r10d, -112(%rbp)
+	movl -112(%rbp), %r11d
 	imull $20, %r11d
-	movl %r11d, -108(%rbp)
-	movl -108(%rbp), %r10d
+	movl %r11d, -112(%rbp)
+	movl -112(%rbp), %r10d
 	movl %r10d, -4(%rbp)
-	movl -104(%rbp), %eax
+	movl -4(%rbp), %eax
 	movq %rbp, %rsp
 	popq %rbp
 	ret

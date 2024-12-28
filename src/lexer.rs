@@ -8,6 +8,11 @@ pub enum Keyword {
     Return,
     If,
     Else,
+    Do,
+    While,
+    For,
+    Break,
+    Continue,
 }
 
 #[derive(Debug)]
@@ -109,6 +114,26 @@ lazy_static::lazy_static! {
         TokenPattern {
             regex: Regex::new(r"\belse\b").unwrap(),
             token_type: |_| Token::Keyword(Keyword::Else),
+        },
+        TokenPattern {
+            regex: Regex::new(r"\bdo\b").unwrap(),
+            token_type: |_| Token::Keyword(Keyword::Do),
+        },
+        TokenPattern {
+            regex: Regex::new(r"\bwhile\b").unwrap(),
+            token_type: |_| Token::Keyword(Keyword::While),
+        },
+        TokenPattern {
+            regex: Regex::new(r"\bfor\b").unwrap(),
+            token_type: |_| Token::Keyword(Keyword::For),
+        },
+        TokenPattern {
+            regex: Regex::new(r"\bbreak\b").unwrap(),
+            token_type: |_| Token::Keyword(Keyword::Break),
+        },
+        TokenPattern {
+            regex: Regex::new(r"\bcontinue\b").unwrap(),
+            token_type: |_| Token::Keyword(Keyword::Continue),
         },
         TokenPattern {
             regex: Regex::new(r"[a-zA-Z_]\w*\b").unwrap(),

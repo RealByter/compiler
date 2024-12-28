@@ -18,11 +18,12 @@ int main(void)
             z = 2;
             z = 4;
         }
+        int y = 5;
     }
 
     int w = (z == 1) ? (z * 2) : (z * 3);
 
     y *= 20;
 
-    return w;
+    return y;
 }

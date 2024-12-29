@@ -33,10 +33,21 @@ use std::process::Command;
 //     Ok(())
 // }
 
-pub fn compile_executable(assembly_file: &str, executable_file: &str) -> io::Result<()> {
-    let status = Command::new("gcc")
-        .args([assembly_file, "-o", executable_file])
-        .status()?;
+pub fn compile_executable(
+    assembly_files: &[String],
+    executable_file: &str,
+    no_main: bool,
+) -> io::Result<()> {
+    let mut args = assembly_files.to_vec();
+    args.push("-o".into());
+    args.push(executable_file.into());
+
+    if no_main {
+        args.push("-c".into());
+    }
+
+    let status = Command::new("gcc").args(&args).status()?;
+
     if !status.success() {
         return Err(io::Error::new(io::ErrorKind::Other, "Compilation failed"));
     }

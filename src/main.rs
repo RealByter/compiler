@@ -1,21 +1,29 @@
+use compiler;
 use std::env;
 use std::io;
-use compiler;
 
 fn main() -> io::Result<()> {
     let args: Vec<String> = env::args().collect();
 
-    if args.len() != 2 && args.len() != 3 {
-        eprintln!("Invalid args. Should be: \"program <input_file> [--lex|--parse|--validate|--tacky|--codegen]\"");
+    if args.len() < 3 {
+        eprintln!("Usage: program <output_executable> <source_files...> [--lex|--parse|--validate|--tacky|--codegen] [-c]");
         std::process::exit(1);
     }
 
-    let input_file = &args[1];
-    let stop_at = if args.len() == 3 {
-        Some(args[2].as_str())
-    } else {
-        None
-    };
+    let executable_file = &args[1];
+    let source_files: Vec<String> = args[2..args.len()]
+        .iter()
+        .filter(|&arg| !arg.starts_with("-"))
+        .cloned()
+        .collect();
 
-    compiler::run(input_file, stop_at)
+    let stop_at = args.iter().find(|&arg| {
+        matches!(
+            arg.as_str(),
+            "--lex" | "--parse" | "--validate" | "--tacky" | "--codegen"
+        )
+    });
+    let no_main = args.contains(&"-c".to_string());
+
+    compiler::run(executable_file, source_files, stop_at, no_main)
 }

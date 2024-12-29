@@ -13,6 +13,9 @@ pub enum Keyword {
     For,
     Break,
     Continue,
+    Switch,
+    Default,
+    Case
 }
 
 #[derive(Debug)]
@@ -134,6 +137,18 @@ lazy_static::lazy_static! {
         TokenPattern {
             regex: Regex::new(r"\bcontinue\b").unwrap(),
             token_type: |_| Token::Keyword(Keyword::Continue),
+        },
+        TokenPattern {
+            regex: Regex::new(r"\bswitch\b").unwrap(),
+            token_type: |_| Token::Keyword(Keyword::Switch),
+        },
+        TokenPattern {
+            regex: Regex::new(r"\bdefault\b").unwrap(),
+            token_type: |_| Token::Keyword(Keyword::Default),
+        },
+        TokenPattern {
+            regex: Regex::new(r"\bcase\b").unwrap(),
+            token_type: |_| Token::Keyword(Keyword::Case),
         },
         TokenPattern {
             regex: Regex::new(r"[a-zA-Z_]\w*\b").unwrap(),

@@ -41,12 +41,17 @@ pub enum Statement {
         Box<Statement>,
         Option<String>,
     ), // init, condition, post, body, label
-    Switch(Expression, Vec<Case>, Option<Box<Statement>>, Option<String>), // value, cases, default?, label
+    Switch(
+        Expression,
+        Vec<Case>,
+        Option<Box<Statement>>,
+        Option<String>,
+    ), // value, cases, default?, label
 }
 
 #[derive(Debug)]
 pub struct Case {
-    pub cond: Expression,
+    pub cond: i64,
     pub body: Statement,
 }
 
@@ -316,13 +321,15 @@ fn parse_statement(
             let mut cases: Vec<Case> = Vec::new();
             while let Some(Token::Keyword(Keyword::Case)) = tokens.peek() {
                 tokens.next();
-                let cond = parse_expression(tokens, MAX_PRECEDENCE)?;
+                let next = tokens.next();
+                let cond = if let Some(Token::Constant(val)) = next {
+                    val
+                } else {
+                    return Err(format!("Expected a constant value. Got: {:#?}", next));
+                };
                 expect(Token::Colon, tokens)?;
                 let body = parse_statement(tokens)?;
-                cases.push(Case {
-                    cond,
-                    body,
-                });
+                cases.push(Case { cond, body });
             }
             let default = if let Some(Token::Keyword(Keyword::Default)) = tokens.peek() {
                 tokens.next();
@@ -331,6 +338,7 @@ fn parse_statement(
             } else {
                 None
             };
+            expect(Token::CloseBrace, tokens)?;
 
             Ok(Statement::Switch(value, cases, default, None))
         }
@@ -362,7 +370,6 @@ fn parse_expression(
     tokens: &mut Peekable<impl Iterator<Item = Token>>,
     max_precedence: u8,
 ) -> Result<Expression, String> {
-    println!("working on {:?}", tokens.peek().unwrap());
     let mut left = parse_factor(tokens)?;
     while let Some(Token::Operator(
         op @ (lexer::Operator::Plus
@@ -439,7 +446,7 @@ fn parse_expression(
             BinaryOperator::TernaryIf => {
                 tokens.next();
                 let middle = parse_expression(tokens, MAX_PRECEDENCE)?;
-                expect(Token::Operator(lexer::Operator::TernaryElse), tokens)?;
+                expect(Token::Colon, tokens)?;
                 let right = parse_expression(tokens, precedence)?;
                 left = Expression::Conditional(Box::new(left), Box::new(middle), Box::new(right));
             }

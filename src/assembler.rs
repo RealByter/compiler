@@ -168,6 +168,10 @@ pub fn tacky_to_assembly(orig_instructions: Vec<tacker::Instruction>) -> Vec<Ins
                 instructions.push(Instruction::Cmp(Operand::Imm(0), val_to_operand(val)));
                 instructions.push(Instruction::JmpCC(CondCode::NE, target));
             }
+            tacker::Instruction::JumpIfEqual(val1, val2, target) => {
+                instructions.push(Instruction::Cmp(val_to_operand(val1), val_to_operand(val2)));
+                instructions.push(Instruction::JmpCC(CondCode::E, target));
+            }
             tacker::Instruction::Unary(tacker::UnaryOperator::Not, src, dst) => {
                 instructions.push(Instruction::Cmp(Operand::Imm(0), val_to_operand(src)));
                 instructions.push(Instruction::Mov(

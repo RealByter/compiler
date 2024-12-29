@@ -53,5 +53,5 @@ int main(void)
 
     y *= 20;
 
-    return z;
+    return y;
 }

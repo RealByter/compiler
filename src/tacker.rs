@@ -20,6 +20,7 @@ pub enum Instruction {
     Jump(String),                          // identifier
     JumpIfZero(Val, String),               // condition, target
     JumpIfNotZero(Val, String),            // condition, target
+    JumpIfEqual(Val, Val, String),         // value1, value2, target (vs edx)
     Label(String),                         // identifier
 }
 
@@ -172,8 +173,35 @@ fn emit_tacky_statement(statement: parser::Statement, instructions: &mut Vec<Ins
             instructions.push(Instruction::Jump(format!("continue_{}", label.unwrap())));
         }
         parser::Statement::Switch(cond, cases, default, label) => {
+            let label = label.unwrap();
+            let value = emit_tacky_value(cond, instructions);
+            let break_label = format!("break_{}", label);
+            for case in &cases {
+                instructions.push(Instruction::JumpIfEqual(
+                    value.clone(),
+                    Val::Constant(case.cond),
+                    format!("{}.{}", label, case.cond),
+                ))
+            }
+            if let Some(_) = default {
+                instructions.push(Instruction::Jump(format!("{}.default", label)));
+            }
+            else {
+                instructions.push(Instruction::Jump(break_label.clone()));
+            }
 
-        },
+            for case in cases {
+                instructions.push(Instruction::Label(format!("{}.{}", label, case.cond)));
+                emit_tacky_statement(case.body, instructions);
+            }
+
+            if let Some(default) = default {
+                instructions.push(Instruction::Label(format!("{}.default", label)));
+                emit_tacky_statement(*default, instructions);
+            }
+
+            instructions.push(Instruction::Label(break_label));
+        }
     }
 }
 

@@ -89,6 +89,21 @@ main:
 .Llabel_if_end.7:
 	movl $5, -88(%rbp)
 .Llabel_if_end.5:
+	movl $10, %r11d
+	cmpl -4(%rbp), %r11d
+	je .Llabel_switch.0.10
+	movl $20, %r11d
+	cmpl -4(%rbp), %r11d
+	je .Llabel_switch.0.20
+	jmp .Llabel_switch.0.default
+.Llabel_switch.0.10:
+	movl $11, -4(%rbp)
+.Llabel_switch.0.20:
+	movl $12, -4(%rbp)
+	jmp .Lbreak_label_switch.0
+.Llabel_switch.0.default:
+	movl $13, -4(%rbp)
+.Lbreak_label_switch.0:
 	cmpl $1, -84(%rbp)
 	movl $0, -92(%rbp)
 	sete -92(%rbp)
@@ -113,53 +128,53 @@ main:
 .Llabel_cond_end.9:
 	movl -100(%rbp), %r10d
 	movl %r10d, -108(%rbp)
-.Lcontinue_label_while.0:
+.Lcontinue_label_while.1:
 	cmpl $0, -84(%rbp)
 	movl $0, -112(%rbp)
 	setg -112(%rbp)
 	cmpl $0, -112(%rbp)
-	je .Lbreak_label_while.0
+	je .Lbreak_label_while.1
 	movl -84(%rbp), %r10d
 	movl %r10d, -116(%rbp)
 	subl $1, -116(%rbp)
 	movl -116(%rbp), %r10d
 	movl %r10d, -84(%rbp)
-	jmp .Lcontinue_label_while.0
-.Lbreak_label_while.0:
+	jmp .Lcontinue_label_while.1
+.Lbreak_label_while.1:
 	movl $0, -120(%rbp)
-.Lstart_label_for.1:
+.Lstart_label_for.2:
 	movl -108(%rbp), %r10d
 	cmpl %r10d, -120(%rbp)
 	movl $0, -124(%rbp)
 	setl -124(%rbp)
 	cmpl $0, -124(%rbp)
-	je .Lbreak_label_for.1
+	je .Lbreak_label_for.2
 	movl -84(%rbp), %r10d
 	movl %r10d, -128(%rbp)
 	addl $1, -128(%rbp)
 	movl -128(%rbp), %r10d
 	movl %r10d, -84(%rbp)
-.Lcontinue_label_for.1:
+.Lcontinue_label_for.2:
 	movl -120(%rbp), %r10d
 	movl %r10d, -132(%rbp)
 	addl $1, -132(%rbp)
 	movl -132(%rbp), %r10d
 	movl %r10d, -120(%rbp)
-	jmp .Lstart_label_for.1
-.Lbreak_label_for.1:
-.Lstart_label_do_while.2:
+	jmp .Lstart_label_for.2
+.Lbreak_label_for.2:
+.Lstart_label_do_while.3:
 	movl -84(%rbp), %r10d
 	movl %r10d, -136(%rbp)
 	subl $1, -136(%rbp)
 	movl -136(%rbp), %r10d
 	movl %r10d, -84(%rbp)
-.Lcontinue_label_do_while.2:
+.Lcontinue_label_do_while.3:
 	cmpl $0, -84(%rbp)
 	movl $0, -140(%rbp)
 	setg -140(%rbp)
 	cmpl $0, -140(%rbp)
-	jne .Lstart_label_do_while.2
-.Lbreak_label_do_while.2:
+	jne .Lstart_label_do_while.3
+.Lbreak_label_do_while.3:
 	movl -4(%rbp), %r10d
 	movl %r10d, -144(%rbp)
 	movl -144(%rbp), %r11d
@@ -167,7 +182,7 @@ main:
 	movl %r11d, -144(%rbp)
 	movl -144(%rbp), %r10d
 	movl %r10d, -4(%rbp)
-	movl -84(%rbp), %eax
+	movl -4(%rbp), %eax
 	movq %rbp, %rsp
 	popq %rbp
 	ret

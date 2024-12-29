@@ -167,7 +167,7 @@ fn resolve_statement(
             let mut resolved_cases: Vec<Case> = Vec::new();
             for case in cases {
                 resolved_cases.push(Case {
-                    cond: resolve_expression(case.cond, variable_map)?,
+                    cond: case.cond,
                     body: resolve_statement(case.body, variable_map)?,
                 });
             }

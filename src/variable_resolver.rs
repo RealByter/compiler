@@ -160,10 +160,28 @@ fn resolve_statement(
                     None => None,
                 },
                 Box::new(resolve_statement(*body, &mut new_scope_variables)?),
+                label,
+            ))
+        }
+        Statement::Switch(cond, cases, default, label) => {
+            let mut resolved_cases: Vec<Case> = Vec::new();
+            for case in cases {
+                resolved_cases.push(Case {
+                    cond: resolve_expression(case.cond, variable_map)?,
+                    body: resolve_statement(case.body, variable_map)?,
+                });
+            }
+
+            Ok(Statement::Switch(
+                resolve_expression(cond, variable_map)?,
+                resolved_cases,
+                match default {
+                    None => None,
+                    Some(body) => Some(Box::new(resolve_statement(*body, variable_map)?)),
+                },
                 label
             ))
         }
-        Statement::Switch(expression, vec, statement) => todo!(),
     }
 }
 

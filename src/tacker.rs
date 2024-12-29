@@ -171,7 +171,9 @@ fn emit_tacky_statement(statement: parser::Statement, instructions: &mut Vec<Ins
         parser::Statement::Continue(label) => {
             instructions.push(Instruction::Jump(format!("continue_{}", label.unwrap())));
         }
-        parser::Statement::Switch(expression, vec, statement) => todo!(),
+        parser::Statement::Switch(cond, cases, default, label) => {
+
+        },
     }
 }
 

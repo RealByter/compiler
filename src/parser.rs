@@ -41,14 +41,13 @@ pub enum Statement {
         Box<Statement>,
         Option<String>,
     ), // init, condition, post, body, label
-    Switch(Expression, Vec<Case>, Option<Box<Statement>>), // value, cases, default?
+    Switch(Expression, Vec<Case>, Option<Box<Statement>>, Option<String>), // value, cases, default?, label
 }
 
 #[derive(Debug)]
 pub struct Case {
-    cond: Expression,
-    body: Statement,
-    label: Option<String>, // label
+    pub cond: Expression,
+    pub body: Statement,
 }
 
 #[derive(Debug)]
@@ -323,7 +322,6 @@ fn parse_statement(
                 cases.push(Case {
                     cond,
                     body,
-                    label: None,
                 });
             }
             let default = if let Some(Token::Keyword(Keyword::Default)) = tokens.peek() {
@@ -334,7 +332,7 @@ fn parse_statement(
                 None
             };
 
-            Ok(Statement::Switch(value, cases, default))
+            Ok(Statement::Switch(value, cases, default, None))
         }
         Some(_) => {
             let expression = parse_expression(tokens, MAX_PRECEDENCE)?;

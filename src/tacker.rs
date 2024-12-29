@@ -185,8 +185,7 @@ fn emit_tacky_statement(statement: parser::Statement, instructions: &mut Vec<Ins
             }
             if let Some(_) = default {
                 instructions.push(Instruction::Jump(format!("{}.default", label)));
-            }
-            else {
+            } else {
                 instructions.push(Instruction::Jump(break_label.clone()));
             }
 
@@ -205,12 +204,13 @@ fn emit_tacky_statement(statement: parser::Statement, instructions: &mut Vec<Ins
     }
 }
 
-fn emit_tacky_delcaration(declaration: parser::Declaration, instructions: &mut Vec<Instruction>) {
+fn emit_tacky_delcaration(declaration: parser::VarDeclaration, instructions: &mut Vec<Instruction>) {
     match declaration {
-        parser::Declaration::Uninitialized(_) => {}
-        parser::Declaration::Initialized(var, expression) => {
-            let result = emit_tacky_value(expression, instructions);
-            instructions.push(Instruction::Copy(result, Val::Var(var)));
+        parser::VarDeclaration::VarDecl(parser::VariableDeclaration { name, init }) => {
+            if let Some(init) = init {
+                let result = emit_tacky_value(init, instructions);
+                instructions.push(Instruction::Copy(result, Val::Var(name)));
+            }
         }
     }
 }

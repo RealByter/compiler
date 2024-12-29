@@ -29,16 +29,15 @@ fn resolve_block(block: Block, variable_map: &mut VariableMap) -> Result<Block, 
 }
 
 fn resolve_declaration(
-    declaration: Declaration,
+    declaration: VarDeclaration,
     variable_map: &mut VariableMap,
-) -> Result<Declaration, String> {
+) -> Result<VarDeclaration, String> {
     let mut expression: Option<Expression> = None;
     let name = match declaration {
-        Declaration::Initialized(name, exp) => {
-            expression = Some(exp);
+        VarDeclaration::VarDecl(VariableDeclaration{name, init}) => {
+            expression = init;
             name
         }
-        Declaration::Uninitialized(name) => name,
     };
 
     if variable_map.contains_key(&name) && variable_map.get(&name).unwrap().from_current_block {
@@ -54,12 +53,12 @@ fn resolve_declaration(
         },
     );
     if let Some(exp) = expression {
-        return Ok(Declaration::Initialized(
+        return Ok(VarDeclaration::Initialized(
             unique_name,
             resolve_expression(exp, variable_map)?,
         ));
     } else {
-        return Ok(Declaration::Uninitialized(unique_name));
+        return Ok(VarDeclaration::Uninitialized(unique_name));
     }
 }
 

@@ -6,11 +6,18 @@ use std::iter::Peekable;
 
 #[derive(Debug)]
 pub struct Program {
-    pub function: FunctionDefinition,
+    pub functions: Vec<FunctionDeclaration>,
 }
 
 #[derive(Debug)]
 pub struct FunctionDefinition {
+    name: String,
+    params: Vec<String>,
+    body: Option<Block>,
+}
+
+#[derive(Debug)]
+pub struct FunctionDeclaration {
     pub identifier: String,
     pub body: Block,
 }
@@ -57,14 +64,20 @@ pub struct Case {
 
 #[derive(Debug)]
 pub enum ForInit {
-    InitDeclaration(Declaration),
+    InitDeclaration(VariableDeclaration),
     InitExpression(Option<Expression>),
 }
 
 #[derive(Debug)]
 pub enum Declaration {
-    Initialized(String, Expression),
-    Uninitialized(String),
+    FuncDecl(FunctionDeclaration),
+    VarDecl(VariableDeclaration),
+}
+
+#[derive(Debug)]
+pub struct VariableDeclaration {
+    pub name: String,
+    pub init: Option<Expression>,
 }
 
 #[derive(Debug)]
@@ -75,6 +88,7 @@ pub enum Expression {
     Binary(BinaryOperator, Box<Expression>, Box<Expression>),
     Assignment(Option<BinaryOperator>, Box<Expression>, Box<Expression>),
     Conditional(Box<Expression>, Box<Expression>, Box<Expression>), // condition, then, else
+    FunctionCall(String, Vec<Expression>),                          // identifier, args
 }
 
 #[derive(Debug)]
@@ -172,7 +186,7 @@ pub fn parse_program(
 
 fn parse_function(
     tokens: &mut Peekable<impl Iterator<Item = Token>>,
-) -> Result<FunctionDefinition, String> {
+) -> Result<FunctionDeclaration, String> {
     expect(Token::Keyword(Keyword::Int), tokens)?;
     let identifier = parse_identifier(tokens)?;
     expect(Token::OpenParenthesis, tokens)?;
@@ -180,7 +194,7 @@ fn parse_function(
     expect(Token::CloseParenthesis, tokens)?;
     let body = parse_block(tokens)?;
 
-    Ok(FunctionDefinition { identifier, body })
+    Ok(FunctionDeclaration { identifier, body })
 }
 
 fn parse_block(tokens: &mut Peekable<impl Iterator<Item = Token>>) -> Result<Block, String> {
@@ -200,7 +214,9 @@ fn parse_block_item(
     tokens: &mut Peekable<impl Iterator<Item = Token>>,
 ) -> Result<BlockItem, String> {
     if let Some(Token::Keyword(Keyword::Int)) = tokens.peek() {
-        Ok(BlockItem::D(parse_declaration(tokens)?))
+        Ok(BlockItem::D(Declaration::VarDecl(parse_var_declaration(
+            tokens,
+        )?)))
     } else {
         Ok(BlockItem::S(parse_statement(tokens)?))
     }
@@ -217,19 +233,25 @@ fn parse_identifier(tokens: &mut Peekable<impl Iterator<Item = Token>>) -> Resul
     }
 }
 
-fn parse_declaration(
+fn parse_var_declaration(
     tokens: &mut Peekable<impl Iterator<Item = Token>>,
-) -> Result<Declaration, String> {
+) -> Result<VariableDeclaration, String> {
     expect(Token::Keyword(Keyword::Int), tokens)?;
     let identifier = parse_identifier(tokens)?;
     if let Some(Token::Operator(lexer::Operator::Assign)) = tokens.peek() {
         tokens.next();
         let expression = parse_expression(tokens, MAX_PRECEDENCE)?;
         expect(Token::Semicolon, tokens)?;
-        Ok(Declaration::Initialized(identifier, expression))
+        Ok(VariableDeclaration {
+            name: identifier,
+            init: Some(expression),
+        })
     } else {
         expect(Token::Semicolon, tokens)?;
-        Ok(Declaration::Uninitialized(identifier))
+        Ok(VariableDeclaration {
+            name: identifier,
+            init: None,
+        })
     }
 }
 
@@ -353,7 +375,7 @@ fn parse_statement(
 
 fn parse_for_init(tokens: &mut Peekable<impl Iterator<Item = Token>>) -> Result<ForInit, String> {
     if let Some(Token::Keyword(Keyword::Int)) = tokens.peek() {
-        Ok(ForInit::InitDeclaration(parse_declaration(tokens)?))
+        Ok(ForInit::InitDeclaration(parse_var_declaration(tokens)?))
     } else {
         let token = tokens.next();
         Ok(ForInit::InitExpression(

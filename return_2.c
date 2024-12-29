@@ -21,14 +21,27 @@ int main(void)
         int y = 5;
     }
 
+    switch (y)
+    {
+    case 10:
+        y = 11;
+    case 20:
+    {
+        y = 12;
+        break;
+    }
+    default:
+        y = 13;
+    }
+
     int w = (z == 1) ? (z * 2) : (z * 3);
 
-    while(z > 0)
+    while (z > 0)
     {
         z = z - 1;
     }
 
-    for(int i = 0; i < w; i = i + 1)
+    for (int i = 0; i < w; i = i + 1)
     {
         z = z + 1;
     }

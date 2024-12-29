@@ -32,15 +32,23 @@ pub enum Statement {
     Compound(Block),
     Break(Option<String>),
     Continue(Option<String>),
-    While(Expression, Box<Statement>, Option<String>),   // condition, body, label
+    While(Expression, Box<Statement>, Option<String>), // condition, body, label
     DoWhile(Box<Statement>, Expression, Option<String>), // body, condition, label
     For(
         ForInit,
         Option<Expression>,
         Option<Expression>,
         Box<Statement>,
-        Option<String>
+        Option<String>,
     ), // init, condition, post, body, label
+    Switch(Expression, Vec<Case>, Option<Box<Statement>>), // value, cases, default?
+}
+
+#[derive(Debug)]
+pub struct Case {
+    cond: Expression,
+    body: Statement,
+    label: Option<String>, // label
 }
 
 #[derive(Debug)]
@@ -299,6 +307,34 @@ fn parse_statement(
             expect(Token::CloseParenthesis, tokens)?;
             let body = Box::new(parse_statement(tokens)?);
             Ok(Statement::For(init, condition, post, body, None))
+        }
+        Some(Token::Keyword(Keyword::Switch)) => {
+            tokens.next();
+            expect(Token::OpenParenthesis, tokens)?;
+            let value = parse_expression(tokens, MAX_PRECEDENCE)?;
+            expect(Token::CloseParenthesis, tokens)?;
+            expect(Token::OpenBrace, tokens)?;
+            let mut cases: Vec<Case> = Vec::new();
+            while let Some(Token::Keyword(Keyword::Case)) = tokens.peek() {
+                tokens.next();
+                let cond = parse_expression(tokens, MAX_PRECEDENCE)?;
+                expect(Token::Colon, tokens)?;
+                let body = parse_statement(tokens)?;
+                cases.push(Case {
+                    cond,
+                    body,
+                    label: None,
+                });
+            }
+            let default = if let Some(Token::Keyword(Keyword::Default)) = tokens.peek() {
+                tokens.next();
+                expect(Token::Colon, tokens)?;
+                Some(Box::new(parse_statement(tokens)?))
+            } else {
+                None
+            };
+
+            Ok(Statement::Switch(value, cases, default))
         }
         Some(_) => {
             let expression = parse_expression(tokens, MAX_PRECEDENCE)?;

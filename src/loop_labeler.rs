@@ -57,6 +57,7 @@ fn label_statement(statement: &mut Statement, label: Option<String>) -> Result<(
         Statement::Return(_) => {}
         Statement::Expression(_) => {}
         Statement::Null => {}
+        Statement::Switch(expression, vec, statement) => todo!(),
     }
 
     Ok(())

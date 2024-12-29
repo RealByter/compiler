@@ -163,6 +163,7 @@ fn resolve_statement(
                 label
             ))
         }
+        Statement::Switch(expression, vec, statement) => todo!(),
     }
 }
 

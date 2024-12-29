@@ -28,6 +28,7 @@ pub enum Token {
     OpenBrace,
     CloseBrace,
     Semicolon,
+    Colon,
     Operator(Operator),
 }
 
@@ -85,6 +86,7 @@ impl PartialEq for Token {
             (Token::OpenBrace, Token::OpenBrace) => true,
             (Token::CloseBrace, Token::CloseBrace) => true,
             (Token::Semicolon, Token::Semicolon) => true,
+            (Token::Colon, Token::Colon) => true,
             (Token::Operator(o1), Token::Operator(o2)) => o1 == o2,
             _ => false,
         }
@@ -177,6 +179,10 @@ lazy_static::lazy_static! {
         TokenPattern {
             regex: Regex::new(r";").unwrap(),
             token_type: |_| Token::Semicolon,
+        },
+        TokenPattern {
+            regex: Regex::new(r":").unwrap(),
+            token_type: |_| Token::Colon,
         },
         TokenPattern {
             regex: Regex::new(r"-").unwrap(),

@@ -16,12 +16,6 @@ pub struct FunctionDefinition {
     body: Option<Block>,
 }
 
-#[derive(Debug)]
-pub struct FunctionDeclaration {
-    pub identifier: String,
-    pub body: Block,
-}
-
 pub type Block = Vec<BlockItem>;
 
 #[derive(Debug)]
@@ -72,6 +66,13 @@ pub enum ForInit {
 pub enum Declaration {
     FuncDecl(FunctionDeclaration),
     VarDecl(VariableDeclaration),
+}
+
+#[derive(Debug)]
+pub struct FunctionDeclaration {
+    pub identifier: String,
+    params: Vec<String>,
+    pub body: Option<Block>,
 }
 
 #[derive(Debug)]
@@ -175,13 +176,13 @@ lazy_static! {
 pub fn parse_program(
     tokens: &mut Peekable<impl Iterator<Item = Token>>,
 ) -> Result<Program, String> {
-    if tokens.peek().is_some() {
-        Ok(Program {
-            function: parse_function(tokens)?,
-        })
-    } else {
-        Err("Unexpected end of tokens.".to_string())
+    let mut program = Program {
+        functions: Vec::new(),
+    };
+    while tokens.peek().is_some() {
+        program.functions.push(parse_function(tokens)?);
     }
+    Ok(program)
 }
 
 fn parse_function(
@@ -190,11 +191,29 @@ fn parse_function(
     expect(Token::Keyword(Keyword::Int), tokens)?;
     let identifier = parse_identifier(tokens)?;
     expect(Token::OpenParenthesis, tokens)?;
-    expect(Token::Keyword(Keyword::Void), tokens)?;
+    let mut params: Vec<String> = Vec::new();
+    if let Some(Token::Keyword(Keyword::Void)) = tokens.peek() {
+    } else {
+        while let Some(Token::Keyword(Keyword::Int)) = tokens.peek() {
+            tokens.next();
+            let param = parse_identifier(tokens)?;
+            params.push(param);
+        }
+    }
     expect(Token::CloseParenthesis, tokens)?;
-    let body = parse_block(tokens)?;
 
-    Ok(FunctionDeclaration { identifier, body })
+    let body = if let Some(Token::Semicolon) = tokens.peek() {
+        tokens.next();
+        None
+    } else {
+        Some(parse_block(tokens)?)
+    };
+
+    Ok(FunctionDeclaration {
+        identifier,
+        body,
+        params,
+    })
 }
 
 fn parse_block(tokens: &mut Peekable<impl Iterator<Item = Token>>) -> Result<Block, String> {
@@ -214,12 +233,76 @@ fn parse_block_item(
     tokens: &mut Peekable<impl Iterator<Item = Token>>,
 ) -> Result<BlockItem, String> {
     if let Some(Token::Keyword(Keyword::Int)) = tokens.peek() {
-        Ok(BlockItem::D(Declaration::VarDecl(parse_var_declaration(
-            tokens,
-        )?)))
+        tokens.next();
+        let identifier = parse_identifier(tokens)?;
+        if let Some(Token::OpenParenthesis) = tokens.next() {
+            Ok(BlockItem::D(Declaration::FuncDecl(
+                parse_function_declaration(tokens, identifier)?,
+            )))
+        } else {
+            Ok(BlockItem::D(Declaration::VarDecl(parse_var_declaration(
+                tokens, identifier,
+            )?)))
+        }
     } else {
         Ok(BlockItem::S(parse_statement(tokens)?))
     }
+}
+
+fn parse_var_declaration(
+    tokens: &mut Peekable<impl Iterator<Item = Token>>,
+    identifier: String,
+) -> Result<VariableDeclaration, String> {
+    if let Some(Token::Operator(lexer::Operator::Assign)) = tokens.peek() {
+        tokens.next();
+        let expression = parse_expression(tokens, MAX_PRECEDENCE)?;
+        expect(Token::Semicolon, tokens)?;
+        Ok(VariableDeclaration {
+            name: identifier,
+            init: Some(expression),
+        })
+    } else {
+        expect(Token::Semicolon, tokens)?;
+        Ok(VariableDeclaration {
+            name: identifier,
+            init: None,
+        })
+    }
+}
+
+fn parse_function_declaration(
+    tokens: &mut Peekable<impl Iterator<Item = Token>>,
+    identifier: String,
+) -> Result<FunctionDeclaration, String> {
+    expect(Token::OpenParenthesis, tokens)?;
+    let mut params: Vec<String> = Vec::new();
+    if let Some(Token::Keyword(Keyword::Void)) = tokens.peek() {
+    } else if let Some(Token::Keyword(Keyword::Int)) = tokens.peek() {
+        tokens.next();
+        let param = parse_identifier(tokens)?;
+        params.push(param);
+
+        while let Some(Token::Comma) = tokens.peek() {
+            tokens.next();
+            expect(Token::Keyword(Keyword::Int), tokens)?;
+            let param = parse_identifier(tokens)?;
+            params.push(param);
+        }
+    }
+    expect(Token::CloseParenthesis, tokens)?;
+
+    let body = if let Some(Token::Semicolon) = tokens.peek() {
+        tokens.next();
+        None
+    } else {
+        Some(parse_block(tokens)?)
+    };
+
+    Ok(FunctionDeclaration {
+        identifier,
+        body,
+        params,
+    })
 }
 
 fn parse_identifier(tokens: &mut Peekable<impl Iterator<Item = Token>>) -> Result<String, String> {
@@ -233,7 +316,7 @@ fn parse_identifier(tokens: &mut Peekable<impl Iterator<Item = Token>>) -> Resul
     }
 }
 
-fn parse_var_declaration(
+fn parse_var(
     tokens: &mut Peekable<impl Iterator<Item = Token>>,
 ) -> Result<VariableDeclaration, String> {
     expect(Token::Keyword(Keyword::Int), tokens)?;
@@ -375,7 +458,7 @@ fn parse_statement(
 
 fn parse_for_init(tokens: &mut Peekable<impl Iterator<Item = Token>>) -> Result<ForInit, String> {
     if let Some(Token::Keyword(Keyword::Int)) = tokens.peek() {
-        Ok(ForInit::InitDeclaration(parse_var_declaration(tokens)?))
+        Ok(ForInit::InitDeclaration(parse_var(tokens)?))
     } else {
         let token = tokens.next();
         Ok(ForInit::InitExpression(
@@ -502,7 +585,31 @@ fn parse_factor(tokens: &mut Peekable<impl Iterator<Item = Token>>) -> Result<Ex
             expect(Token::CloseParenthesis, tokens)?;
             Ok(inner_expression)
         }
-        Some(Token::Identifier(id)) => Ok(Expression::Var(id)),
+        Some(Token::Identifier(id)) => {
+            if let Some(Token::OpenParenthesis) = tokens.peek() {
+                tokens.next();
+                if let Some(Token::CloseParenthesis) = tokens.peek() {
+                    Ok(Expression::FunctionCall(id, Vec::new()))
+                } else {
+                    let mut args: Vec<Expression> = Vec::new();
+                    args.push(parse_expression(tokens, MAX_PRECEDENCE)?);
+                    while let Some(token) = tokens.peek() {
+                        if let Token::CloseParenthesis = token {
+                            break;
+                        }
+                        if let Token::Comma = token {
+                            tokens.next();
+                            args.push(parse_expression(tokens, MAX_PRECEDENCE)?);
+                        } else {
+                            return Err(format!("Expected a comma, got: {:#?}", token));
+                        }
+                    }
+                    Ok(Expression::FunctionCall(id, args))
+                }
+            } else {
+                Ok(Expression::Var(id))
+            }
+        }
         Some(token) => {
             print!("Remaining: ");
             for token in tokens {

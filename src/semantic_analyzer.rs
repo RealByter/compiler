@@ -4,11 +4,15 @@ use crate::parser::*;
 enum InStatement {
     Other,
     Loop,
-    Switch
+    Switch,
 }
 
 pub fn analyze_semantics(mut program: Program) -> Result<Program, String> {
-    label_block(&mut program.function.body, None)?;
+    for function in program.functions.iter_mut() {
+        if let Some(body) = &mut function.body {
+            label_block(body, None)?;
+        }
+    }
     Ok(program)
 }
 
@@ -23,7 +27,11 @@ fn label_block(block: &mut Block, label: Option<String>) -> Result<(), String> {
     }
     Ok(())
 }
-fn label_statement(statement: &mut Statement, label: Option<String>, in_statement: InStatement) -> Result<(), String> {
+fn label_statement(
+    statement: &mut Statement,
+    label: Option<String>,
+    in_statement: InStatement,
+) -> Result<(), String> {
     match statement {
         Statement::Compound(block) => {
             label_block(block, label)?;
@@ -73,7 +81,7 @@ fn label_statement(statement: &mut Statement, label: Option<String>, in_statemen
                 label_statement(&mut *default, Some(new_label.clone()), InStatement::Switch)?;
             }
             *label_opt = Some(new_label);
-        },
+        }
     }
 
     Ok(())

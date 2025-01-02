@@ -70,7 +70,7 @@ pub enum Declaration {
 
 #[derive(Debug)]
 pub struct FunctionDeclaration {
-    pub identifier: String,
+    pub name: String,
     pub params: Vec<String>,
     pub body: Option<Block>,
 }
@@ -210,7 +210,7 @@ fn parse_function(
     };
 
     Ok(FunctionDeclaration {
-        identifier,
+        name: identifier,
         body,
         params,
     })
@@ -299,7 +299,7 @@ fn parse_function_declaration(
     };
 
     Ok(FunctionDeclaration {
-        identifier,
+        name: identifier,
         body,
         params,
     })

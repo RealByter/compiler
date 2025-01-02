@@ -6,13 +6,14 @@ struct IdentifierEntry {
     from_current_block: bool,
     has_linkage: bool,
 }
+
 type IdentifierMap = HashMap<String, IdentifierEntry>;
 
 pub fn resolve_identifiers(program: Program) -> Result<Program, String> {
     let mut identifier_map: IdentifierMap = HashMap::new();
     let mut new_functions: Vec<FunctionDeclaration> = Vec::new();
     for function in program.functions {
-        new_functions.push(resolve_function_declaration(function, true, &mut identifier_map)?);
+        new_functions.push(resolve_function_declaration(function, &mut identifier_map)?);
     }
     Ok(Program {
         functions: new_functions,
@@ -84,12 +85,11 @@ fn resolve_variable_declaration(
 
 fn resolve_function_declaration(
     function_declaration: FunctionDeclaration,
-    has_linkage: bool,
     identifier_map: &mut IdentifierMap,
 ) -> Result<FunctionDeclaration, String> {
-    if identifier_map.contains_key(&function_declaration.identifier) {
+    if identifier_map.contains_key(&function_declaration.name) {
         let prev_entry = identifier_map
-            .get(&function_declaration.identifier)
+            .get(&function_declaration.name)
             .unwrap();
         if prev_entry.from_current_block && !prev_entry.has_linkage {
             return Err("Duplicate declaration".to_string());
@@ -97,11 +97,11 @@ fn resolve_function_declaration(
     }
 
     identifier_map.insert(
-        function_declaration.identifier.clone(),
+        function_declaration.name.clone(),
         IdentifierEntry {
-            unique_name: function_declaration.identifier.clone(),
+            unique_name: function_declaration.name.clone(),
             from_current_block: true,
-            has_linkage,
+            has_linkage: true,
         },
     );
 
@@ -117,7 +117,7 @@ fn resolve_function_declaration(
     };
 
     Ok(FunctionDeclaration {
-        identifier: function_declaration.identifier,
+        name: function_declaration.name,
         params: new_params,
         body: new_body,
     })
@@ -135,12 +135,11 @@ fn resolve_declaration(
             if let Some(_) = function_declaration.body {
                 return Err(format!(
                     "Local function declaration can't have a body: {}",
-                    function_declaration.identifier
+                    function_declaration.name
                 ));
             }
             Ok(Declaration::FuncDecl(resolve_function_declaration(
                 function_declaration,
-                false,
                 identifier_map,
             )?))
         }
@@ -283,10 +282,9 @@ fn resolve_statement(
 
 fn resolve_for_init(init: ForInit, identifier_map: &mut IdentifierMap) -> Result<ForInit, String> {
     match init {
-        ForInit::InitDeclaration(declaration) => Ok(ForInit::InitDeclaration(resolve_variable_declaration(
-            declaration,
-            identifier_map,
-        )?)),
+        ForInit::InitDeclaration(declaration) => Ok(ForInit::InitDeclaration(
+            resolve_variable_declaration(declaration, identifier_map)?,
+        )),
         ForInit::InitExpression(expression) => {
             if let Some(expression) = expression {
                 Ok(ForInit::InitExpression(Some(resolve_expression(

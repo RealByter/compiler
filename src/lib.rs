@@ -9,6 +9,7 @@ mod semantic_analyzer;
 mod parser;
 mod tacker;
 mod identifier_resolver;
+mod type_checker;
 
 pub fn run(
     executable_file: &str,
@@ -50,6 +51,7 @@ pub fn run(
         let program = identifier_resolver::resolve_identifiers(program).unwrap();
         println!("{:#?}", program);
         let program = semantic_analyzer::analyze_semantics(program).unwrap();
+        type_checker::check_types(&program).unwrap();
         if stop_at == Some(&"--validate".to_string()) {
             continue;
         }

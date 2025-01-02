@@ -71,7 +71,7 @@ pub enum Declaration {
 #[derive(Debug)]
 pub struct FunctionDeclaration {
     pub identifier: String,
-    params: Vec<String>,
+    pub params: Vec<String>,
     pub body: Option<Block>,
 }
 

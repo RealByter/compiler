@@ -5,10 +5,10 @@ mod assembler;
 mod gcc;
 mod generator;
 mod lexer;
-mod loop_labeler;
+mod semantic_analyzer;
 mod parser;
 mod tacker;
-mod variable_resolver;
+mod identifier_resolver;
 
 pub fn run(
     executable_file: &str,
@@ -47,9 +47,9 @@ pub fn run(
             continue;
         }
 
-        let program = variable_resolver::resolve_variables(program).unwrap();
+        let program = identifier_resolver::resolve_identifiers(program).unwrap();
         println!("{:#?}", program);
-        let program = loop_labeler::label_loops(program).unwrap();
+        let program = semantic_analyzer::analyze_semantics(program).unwrap();
         if stop_at == Some(&"--validate".to_string()) {
             continue;
         }

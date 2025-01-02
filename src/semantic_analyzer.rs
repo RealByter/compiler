@@ -7,7 +7,7 @@ enum InStatement {
     Switch
 }
 
-pub fn label_loops(mut program: Program) -> Result<Program, String> {
+pub fn analyze_semantics(mut program: Program) -> Result<Program, String> {
     label_block(&mut program.function.body, None)?;
     Ok(program)
 }

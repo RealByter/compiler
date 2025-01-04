@@ -2,12 +2,13 @@ use crate::parser;
 
 #[derive(Debug)]
 pub struct Program {
-    pub function: FunctionDefinition,
+    pub functions: Vec<FunctionDefinition>,
 }
 
 #[derive(Debug)]
 pub struct FunctionDefinition {
     pub identifier: String,
+    pub params: Vec<String>,
     pub instructions: Vec<Instruction>,
 }
 
@@ -22,6 +23,7 @@ pub enum Instruction {
     JumpIfNotZero(Val, String),            // condition, target
     JumpIfEqual(Val, Val, String),         // value1, value2, target (vs edx)
     Label(String),                         // identifier
+    FunctionCall(String, Vec<Val>, Val),   // function name, args, destination
 }
 
 #[derive(Debug, Clone)]
@@ -58,16 +60,29 @@ pub enum BinaryOperator {
 }
 
 pub fn generate_tacky(program: parser::Program) -> Program {
+    // let mut tacky_program = Program {
+    //     function: FunctionDefinition {
+    //         identifier: program.function.identifier,
+    //         instructions: Vec::new(),
+    //     },
+    // };
+
     let mut tacky_program = Program {
-        function: FunctionDefinition {
-            identifier: program.function.identifier,
-            instructions: Vec::new(),
-        },
+        functions: Vec::new(),
     };
 
-    let instructions = &mut tacky_program.function.instructions;
-    emit_tacky_block(program.function.body, instructions);
-    instructions.push(Instruction::Return(Val::Constant(0)));
+    for function in program.functions {
+        if let Some(body) = function.body {
+            let mut tacky_function = FunctionDefinition {
+                identifier: function.name,
+                params: function.params,
+                instructions: Vec::new(),
+            };
+            emit_tacky_block(body, &mut tacky_function.instructions);
+            tacky_function.instructions.push(Instruction::Return(Val::Constant(0)));
+            tacky_program.functions.push(tacky_function);
+        }
+    }
 
     tacky_program
 }
@@ -145,7 +160,7 @@ fn emit_tacky_statement(statement: parser::Statement, instructions: &mut Vec<Ins
 
             match init {
                 parser::ForInit::InitDeclaration(declaration) => {
-                    emit_tacky_delcaration(declaration, instructions);
+                    emit_tacky_delcaration(parser::Declaration::VarDecl(declaration), instructions);
                 }
                 parser::ForInit::InitExpression(expression) => {
                     if let Some(expression) = expression {
@@ -204,14 +219,15 @@ fn emit_tacky_statement(statement: parser::Statement, instructions: &mut Vec<Ins
     }
 }
 
-fn emit_tacky_delcaration(declaration: parser::VarDeclaration, instructions: &mut Vec<Instruction>) {
+fn emit_tacky_delcaration(declaration: parser::Declaration, instructions: &mut Vec<Instruction>) {
     match declaration {
-        parser::VarDeclaration::VarDecl(parser::VariableDeclaration { name, init }) => {
+        parser::Declaration::VarDecl(parser::VariableDeclaration { name, init }) => {
             if let Some(init) = init {
                 let result = emit_tacky_value(init, instructions);
                 instructions.push(Instruction::Copy(result, Val::Var(name)));
             }
         }
+        parser::Declaration::FuncDecl(_) => {}
     }
 }
 
@@ -313,6 +329,15 @@ fn emit_tacky_value(expression: parser::Expression, instructions: &mut Vec<Instr
 
             result
         }
+        parser::Expression::FunctionCall(name, args) => {
+            let mut arg_vals = Vec::new();
+            for arg in args {
+                arg_vals.push(emit_tacky_value(arg, instructions));
+            }
+            let result = Val::Var(make_temp_name());
+            instructions.push(Instruction::FunctionCall(name, arg_vals, result.clone()));
+            result
+        },
     }
 }
 

@@ -103,15 +103,77 @@ fn typecheck_statement(
     statement: &Statement,
     symbol_table: &mut SymbolTable,
 ) -> Result<(), String> {
+    match statement {
+        Statement::Return(expression) => {
+            typecheck_expression(expression, symbol_table)?;
+        },
+        Statement::Expression(expression) => {
+            typecheck_expression(expression, symbol_table)?;
+        },
+        Statement::Null => {},
+        Statement::If(expression, statement1, statement2) => {
+            typecheck_expression(expression, symbol_table)?;
+            typecheck_statement(statement1, symbol_table)?;
+            if let Some(statement) = statement2 {
+                typecheck_statement(statement, symbol_table)?;
+            }
+        },
+        Statement::Compound(vec) => {
+            typecheck_block(vec, symbol_table)?;
+        },
+        Statement::Break(_) => {},
+        Statement::Continue(_) => {},
+        Statement::While(expression, statement, _) => {
+            typecheck_expression(expression, symbol_table)?;
+            typecheck_statement(statement, symbol_table)?;
+        },
+        Statement::DoWhile(statement, expression, _) => {
+            typecheck_statement(statement, symbol_table)?;
+            typecheck_expression(expression, symbol_table)?;
+        },
+        Statement::For(for_init, expression1, expression2, statement, _) => {
+            match for_init {
+                ForInit::InitDeclaration(declaration) => {
+                    typecheck_var_declaration(declaration, symbol_table)?;
+                },
+                ForInit::InitExpression(expression) => {
+                    if let Some(expression) = expression {
+                        typecheck_expression(expression, symbol_table)?;
+                    }
+                }
+            }
+            if let Some(expression) = expression1 {
+                typecheck_expression(expression, symbol_table)?;
+            }
+            if let Some(expression) = expression2 {
+                typecheck_expression(expression, symbol_table)?;
+            }
+            typecheck_statement(statement, symbol_table)?;
+        },
+        Statement::Switch(expression, vec, statement, _) => {
+            typecheck_expression(expression, symbol_table)?;
+            for case in vec {
+                typecheck_statement(&case.body, symbol_table)?;
+            }
+            if let Some(statement) = statement {
+                typecheck_statement(statement, symbol_table)?;
+            }
+        },
+    }
+
+    Ok(())
 }
 
 fn typecheck_expression(
     expression: &Expression,
     symbol_table: &mut SymbolTable,
 ) -> Result<(), String> {
-    match Expression {
+    match expression {
         Expression::FunctionCall(func_name, args) => {
-            let func_type = &symbol_table.get(&func_name).unwrap().sym_type;
+            if !symbol_table.contains_key(func_name) {
+                return Err(format!("Function not declared: {}", func_name));
+            }
+            let func_type = &symbol_table.get(func_name).unwrap().sym_type;
             if *func_type == Type::Int {
                 return Err(format!("Variable used as function name: {}", func_name));
             }
@@ -125,6 +187,32 @@ fn typecheck_expression(
                 typecheck_expression(&arg, symbol_table)?;
             }
         }
+        Expression::Var(var_name) => {
+            if !symbol_table.contains_key(var_name) {
+                return Err(format!("Variable not declared: {}", var_name));
+            }
+
+            if symbol_table.get(var_name).unwrap().sym_type != Type::Int {
+                return Err(format!("Function used as variable name: {}", var_name));
+            }
+        }
+        Expression::Constant(_) => {}
+        Expression::Unary(_, expression) => {
+            typecheck_expression(&expression, symbol_table)?;
+        }
+        Expression::Binary(_, expression1, expression2) => {
+            typecheck_expression(&expression1, symbol_table)?;
+            typecheck_expression(&expression2, symbol_table)?;
+        }
+        Expression::Assignment(_, expression1, expression2) => {
+            typecheck_expression(&expression1, symbol_table)?;
+            typecheck_expression(&expression2, symbol_table)?;
+        },
+        Expression::Conditional(expression1, expression2, expression3) => {
+            typecheck_expression(&expression1, symbol_table)?;
+            typecheck_expression(&expression2, symbol_table)?;
+            typecheck_expression(&expression3, symbol_table)?;
+        },
     }
 
     Ok(())

@@ -84,7 +84,11 @@ pub fn tacky_function_to_assembly(function: tacker::FunctionDefinition) -> Vec<I
     let mut instructions: Vec<Instruction> = Vec::new();
     let arg_registers = [Reg::DI, Reg::SI, Reg::DX, Reg::CX, Reg::R8, Reg::R9];
     let mut register_args = function.params;
-    let stack_args = register_args.split_off(6);
+    let stack_args = if register_args.len() >= 6 {
+        register_args.split_off(6)
+    } else {
+        Vec::new()
+    };
     for (i, param) in register_args.iter().enumerate() {
         if i < arg_registers.len() {
             instructions.push(Instruction::Mov(
@@ -240,7 +244,11 @@ pub fn tacky_function_to_assembly(function: tacker::FunctionDefinition) -> Vec<I
                 let arg_registers = [Reg::DI, Reg::SI, Reg::DX, Reg::CX, Reg::R8, Reg::R9];
 
                 let mut register_args = args;
-                let stack_args = register_args.split_off(6);
+                let stack_args = if register_args.len() >= 6 {
+                    register_args.split_off(6)
+                } else {
+                    Vec::new()
+                };
 
                 let stack_padding = if (stack_args.len() & 1) == 1 { 8 } else { 0 };
 

@@ -51,7 +51,7 @@ pub fn run(
         let program = identifier_resolver::resolve_identifiers(program).unwrap();
         println!("{:#?}", program);
         let program = semantic_analyzer::analyze_semantics(program).unwrap();
-        type_checker::check_types(&program).unwrap();
+        let symbol_table = type_checker::check_types(&program).unwrap();
         if stop_at == Some(&"--validate".to_string()) {
             continue;
         }
@@ -69,7 +69,7 @@ pub fn run(
             continue;
         }
 
-        generator::generate(&assembly_file, assembly)?;
+        generator::generate(&assembly_file, symbol_table, assembly)?;
         assembly_files.push(assembly_file);
     }
 

@@ -7,19 +7,19 @@ enum Type {
     Function(usize), // param count
 }
 
-struct SymbolEntry {
+pub struct SymbolEntry {
     sym_type: Type,
     defined: bool,
 }
 
-type SymbolTable = HashMap<String, SymbolEntry>;
+pub type SymbolTable = HashMap<String, SymbolEntry>;
 
-pub fn check_types(program: &Program) -> Result<(), String> {
+pub fn check_types(program: &Program) -> Result<SymbolTable, String> {
     let mut symbol_table: SymbolTable = HashMap::new();
     for function in &program.functions {
         typecheck_function_declaration(&function, &mut symbol_table)?;
     }
-    Ok(())
+    Ok(symbol_table)
 }
 
 fn typecheck_function_declaration(

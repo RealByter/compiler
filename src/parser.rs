@@ -9,13 +9,6 @@ pub struct Program {
     pub functions: Vec<FunctionDeclaration>,
 }
 
-#[derive(Debug)]
-pub struct FunctionDefinition {
-    name: String,
-    params: Vec<String>,
-    body: Option<Block>,
-}
-
 pub type Block = Vec<BlockItem>;
 
 #[derive(Debug)]
@@ -193,6 +186,7 @@ fn parse_function(
     expect(Token::OpenParenthesis, tokens)?;
     let mut params: Vec<String> = Vec::new();
     if let Some(Token::Keyword(Keyword::Void)) = tokens.peek() {
+        tokens.next();
     } else {
         while let Some(Token::Keyword(Keyword::Int)) = tokens.peek() {
             tokens.next();
@@ -235,7 +229,8 @@ fn parse_block_item(
     if let Some(Token::Keyword(Keyword::Int)) = tokens.peek() {
         tokens.next();
         let identifier = parse_identifier(tokens)?;
-        if let Some(Token::OpenParenthesis) = tokens.next() {
+        if let Some(Token::OpenParenthesis) = tokens.peek() {
+            tokens.next();
             Ok(BlockItem::D(Declaration::FuncDecl(
                 parse_function_declaration(tokens, identifier)?,
             )))

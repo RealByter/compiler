@@ -3,7 +3,7 @@ use std::collections::HashMap;
 
 #[derive(Debug)]
 pub struct Program {
-    pub function: FunctionDefinition,
+    pub functions: Vec<FunctionDefinition>,
 }
 
 #[derive(Debug)]
@@ -26,6 +26,9 @@ pub enum Instruction {
     Label(String),
     AllocateStack(i64),
     Ret,
+    DeallocateStack(i64),
+    Push(Operand),
+    Call(String),
 }
 
 #[derive(Debug, Clone)]
@@ -57,7 +60,12 @@ pub enum Operand {
 #[derive(Debug, Clone)]
 pub enum Reg {
     AX,
+    CX,
     DX,
+    DI,
+    SI,
+    R8,
+    R9,
     R10,
     R11,
 }
@@ -72,9 +80,26 @@ pub enum CondCode {
     LE,
 }
 
-pub fn tacky_to_assembly(orig_instructions: Vec<tacker::Instruction>) -> Vec<Instruction> {
+pub fn tacky_function_to_assembly(function: tacker::FunctionDefinition) -> Vec<Instruction> {
     let mut instructions: Vec<Instruction> = Vec::new();
-    for instruction in orig_instructions {
+    let arg_registers = [Reg::DI, Reg::SI, Reg::DX, Reg::CX, Reg::R8, Reg::R9];
+    let mut register_args = function.params;
+    let stack_args = register_args.split_off(6);
+    for (i, param) in register_args.iter().enumerate() {
+        if i < arg_registers.len() {
+            instructions.push(Instruction::Mov(
+                Operand::Reg(arg_registers[i].clone()),
+                Operand::Pseudo(param.clone()),
+            ));
+        }
+    }
+    for (i, param) in stack_args.iter().enumerate() {
+        instructions.push(Instruction::Mov(
+            Operand::Stack((i as i64 + 1) * 8),
+            Operand::Pseudo(param.clone()),
+        ));
+    }
+    for instruction in function.instructions {
         match instruction {
             tacker::Instruction::Return(val) => {
                 instructions.push(Instruction::Mov(val_to_operand(val), Operand::Reg(Reg::AX)));
@@ -211,6 +236,51 @@ pub fn tacky_to_assembly(orig_instructions: Vec<tacker::Instruction>) -> Vec<Ins
                     val_to_operand(dst),
                 ));
             }
+            tacker::Instruction::FunctionCall(func_name, args, dest) => {
+                let arg_registers = [Reg::DI, Reg::SI, Reg::DX, Reg::CX, Reg::R8, Reg::R9];
+
+                let mut register_args = args;
+                let stack_args = register_args.split_off(6);
+
+                let stack_padding = if (stack_args.len() & 1) == 1 { 8 } else { 0 };
+
+                if stack_padding != 0 {
+                    instructions.push(Instruction::AllocateStack(stack_padding));
+                }
+
+                let mut reg_index = 0;
+                for tacky_arg in register_args {
+                    let reg = &arg_registers[reg_index];
+                    let assembly_arg = val_to_operand(tacky_arg);
+                    instructions.push(Instruction::Mov(assembly_arg, Operand::Reg(reg.clone())));
+                    reg_index += 1;
+                }
+
+                let stack_args_len = stack_args.len() as i64;
+                for tacky_arg in stack_args {
+                    let assembly_arg = val_to_operand(tacky_arg);
+                    match assembly_arg {
+                        Operand::Imm(_) | Operand::Reg(_) => {
+                            instructions.push(Instruction::Push(assembly_arg));
+                        }
+                        _ => {
+                            instructions
+                                .push(Instruction::Mov(assembly_arg, Operand::Reg(Reg::AX)));
+                            instructions.push(Instruction::Push(Operand::Reg(Reg::AX)));
+                        }
+                    }
+                }
+
+                instructions.push(Instruction::Call(func_name));
+
+                let bytes_to_remove: i64 = 8 * stack_args_len + stack_padding;
+                if bytes_to_remove != 0 {
+                    instructions.push(Instruction::DeallocateStack(bytes_to_remove));
+                }
+
+                let assembly_dest = val_to_operand(dest);
+                instructions.push(Instruction::Mov(Operand::Reg(Reg::AX), assembly_dest));
+            }
         }
     }
 
@@ -318,6 +388,13 @@ fn replace_pseudo_operands(instructions: &mut Vec<Instruction>) -> i64 {
                     )),
                 );
             }
+            Instruction::Push(Operand::Pseudo(name)) => {
+                *instruction = Instruction::Push(Operand::Stack(get_identifier_offset(
+                    &mut identifiers,
+                    &mut stack_size,
+                    name,
+                )));
+            }
             _ => {}
         }
     }
@@ -328,7 +405,7 @@ fn replace_pseudo_operands(instructions: &mut Vec<Instruction>) -> i64 {
 fn fix_up(orig_instructions: Vec<Instruction>, stack_size: i64) -> Vec<Instruction> {
     let mut instructions: Vec<Instruction> = Vec::new();
 
-    instructions.push(Instruction::AllocateStack(stack_size));
+    instructions.push(Instruction::AllocateStack(((stack_size + 15) / 16) * 16));
 
     for instruction in orig_instructions {
         match instruction {
@@ -408,15 +485,24 @@ fn fix_up(orig_instructions: Vec<Instruction>, stack_size: i64) -> Vec<Instructi
 }
 
 pub fn assemble(program: tacker::Program) -> Program {
-    let mut instructions = tacky_to_assembly(program.function.instructions);
-    let stack_size = replace_pseudo_operands(&mut instructions);
-    let instructions = fix_up(instructions, stack_size);
+    let mut functions: Vec<FunctionDefinition> = Vec::new();
+    for function in program.functions {
+        functions.push(FunctionDefinition {
+            name: function.identifier.clone(),
+            instructions: tacky_function_to_assembly(function),
+        });
+    }
+    let mut fixed_up_functions: Vec<FunctionDefinition> = Vec::new();
+    for mut function in functions {
+        let stack_size = replace_pseudo_operands(&mut function.instructions);
+        fixed_up_functions.push(FunctionDefinition {
+            name: function.name,
+            instructions: fix_up(function.instructions, stack_size),
+        });
+    }
 
     Program {
-        function: FunctionDefinition {
-            name: program.function.identifier,
-            instructions: instructions,
-        },
+        functions: fixed_up_functions,
     }
 }
 

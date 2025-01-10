@@ -75,7 +75,7 @@ fn resolve_variable_declaration(
     );
 
     Ok(VariableDeclaration {
-        name: var_declaration.name,
+        name: unique_name,
         init: match var_declaration.init {
             Some(expression) => Some(resolve_expression(expression, identifier_map)?),
             None => None,

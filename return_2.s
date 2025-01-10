@@ -2,7 +2,7 @@
 main:
 	pushq %rbp
 	movq %rsp, %rbp
-	subq $160, %rsp
+	subq $144, %rsp
 	movl $10, -4(%rbp)
 	movl $3, -8(%rbp)
 	movl -8(%rbp), %r11d
@@ -74,42 +74,42 @@ main:
 	notl -72(%rbp)
 	movl -72(%rbp), %r10d
 	movl %r10d, -76(%rbp)
-	cmpl $0, -80(%rbp)
+	cmpl $0, -4(%rbp)
 	je .Llabel_if_end.5
-	cmpl $15, -80(%rbp)
-	movl $0, -84(%rbp)
-	setg -84(%rbp)
-	cmpl $0, -84(%rbp)
+	cmpl $15, -4(%rbp)
+	movl $0, -80(%rbp)
+	setg -80(%rbp)
+	cmpl $0, -80(%rbp)
 	je .Llabel_false.6
-	movl $1, -88(%rbp)
+	movl $1, -84(%rbp)
 	jmp .Llabel_if_end.7
 .Llabel_false.6:
-	movl $2, -88(%rbp)
-	movl $4, -88(%rbp)
+	movl $2, -84(%rbp)
+	movl $4, -84(%rbp)
 .Llabel_if_end.7:
-	movl $5, -4(%rbp)
+	movl $5, -88(%rbp)
 .Llabel_if_end.5:
 	movl $10, %r11d
-	cmpl -80(%rbp), %r11d
+	cmpl -4(%rbp), %r11d
 	je .Llabel_switch.0.10
 	movl $20, %r11d
-	cmpl -80(%rbp), %r11d
+	cmpl -4(%rbp), %r11d
 	je .Llabel_switch.0.20
 	jmp .Llabel_switch.0.default
 .Llabel_switch.0.10:
-	movl $11, -80(%rbp)
+	movl $11, -4(%rbp)
 .Llabel_switch.0.20:
-	movl $12, -80(%rbp)
+	movl $12, -4(%rbp)
 	jmp .Lbreak_label_switch.0
 .Llabel_switch.0.default:
-	movl $13, -80(%rbp)
+	movl $13, -4(%rbp)
 .Lbreak_label_switch.0:
-	cmpl $1, -88(%rbp)
+	cmpl $1, -84(%rbp)
 	movl $0, -92(%rbp)
 	sete -92(%rbp)
 	cmpl $0, -92(%rbp)
 	je .Llabel_false.8
-	movl -88(%rbp), %r10d
+	movl -84(%rbp), %r10d
 	movl %r10d, -96(%rbp)
 	movl -96(%rbp), %r11d
 	imull $2, %r11d
@@ -118,7 +118,7 @@ main:
 	movl %r10d, -100(%rbp)
 	jmp .Llabel_cond_end.9
 .Llabel_false.8:
-	movl -88(%rbp), %r10d
+	movl -84(%rbp), %r10d
 	movl %r10d, -104(%rbp)
 	movl -104(%rbp), %r11d
 	imull $3, %r11d
@@ -129,60 +129,60 @@ main:
 	movl -100(%rbp), %r10d
 	movl %r10d, -108(%rbp)
 .Lcontinue_label_while.1:
-	cmpl $0, -88(%rbp)
+	cmpl $0, -84(%rbp)
 	movl $0, -112(%rbp)
 	setg -112(%rbp)
 	cmpl $0, -112(%rbp)
 	je .Lbreak_label_while.1
-	movl -88(%rbp), %r10d
+	movl -84(%rbp), %r10d
 	movl %r10d, -116(%rbp)
 	subl $1, -116(%rbp)
 	movl -116(%rbp), %r10d
-	movl %r10d, -88(%rbp)
+	movl %r10d, -84(%rbp)
 	jmp .Lcontinue_label_while.1
 .Lbreak_label_while.1:
 	movl $0, -120(%rbp)
 .Lstart_label_for.2:
-	movl -124(%rbp), %r10d
-	cmpl %r10d, -128(%rbp)
-	movl $0, -132(%rbp)
-	setl -132(%rbp)
-	cmpl $0, -132(%rbp)
+	movl -108(%rbp), %r10d
+	cmpl %r10d, -120(%rbp)
+	movl $0, -124(%rbp)
+	setl -124(%rbp)
+	cmpl $0, -124(%rbp)
 	je .Lbreak_label_for.2
-	movl -88(%rbp), %r10d
-	movl %r10d, -136(%rbp)
-	addl $1, -136(%rbp)
-	movl -136(%rbp), %r10d
-	movl %r10d, -88(%rbp)
-.Lcontinue_label_for.2:
-	movl -128(%rbp), %r10d
-	movl %r10d, -140(%rbp)
-	addl $1, -140(%rbp)
-	movl -140(%rbp), %r10d
+	movl -84(%rbp), %r10d
 	movl %r10d, -128(%rbp)
+	addl $1, -128(%rbp)
+	movl -128(%rbp), %r10d
+	movl %r10d, -84(%rbp)
+.Lcontinue_label_for.2:
+	movl -120(%rbp), %r10d
+	movl %r10d, -132(%rbp)
+	addl $1, -132(%rbp)
+	movl -132(%rbp), %r10d
+	movl %r10d, -120(%rbp)
 	jmp .Lstart_label_for.2
 .Lbreak_label_for.2:
 .Lstart_label_do_while.3:
-	movl -88(%rbp), %r10d
-	movl %r10d, -144(%rbp)
-	subl $1, -144(%rbp)
-	movl -144(%rbp), %r10d
-	movl %r10d, -88(%rbp)
+	movl -84(%rbp), %r10d
+	movl %r10d, -136(%rbp)
+	subl $1, -136(%rbp)
+	movl -136(%rbp), %r10d
+	movl %r10d, -84(%rbp)
 .Lcontinue_label_do_while.3:
-	cmpl $0, -88(%rbp)
-	movl $0, -148(%rbp)
-	setg -148(%rbp)
-	cmpl $0, -148(%rbp)
+	cmpl $0, -84(%rbp)
+	movl $0, -140(%rbp)
+	setg -140(%rbp)
+	cmpl $0, -140(%rbp)
 	jne .Lstart_label_do_while.3
 .Lbreak_label_do_while.3:
-	movl -80(%rbp), %r10d
-	movl %r10d, -152(%rbp)
-	movl -152(%rbp), %r11d
+	movl -4(%rbp), %r10d
+	movl %r10d, -144(%rbp)
+	movl -144(%rbp), %r11d
 	imull $20, %r11d
-	movl %r11d, -152(%rbp)
-	movl -152(%rbp), %r10d
-	movl %r10d, -80(%rbp)
-	movl -80(%rbp), %eax
+	movl %r11d, -144(%rbp)
+	movl -144(%rbp), %r10d
+	movl %r10d, -4(%rbp)
+	movl -4(%rbp), %eax
 	movq %rbp, %rsp
 	popq %rbp
 	ret

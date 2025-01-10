@@ -106,6 +106,7 @@ pub fn tacky_function_to_assembly(function: tacker::FunctionDefinition) -> Vec<I
     for instruction in function.instructions {
         match instruction {
             tacker::Instruction::Return(val) => {
+                println!("return");
                 instructions.push(Instruction::Mov(val_to_operand(val), Operand::Reg(Reg::AX)));
                 instructions.push(Instruction::Ret);
             }
@@ -113,6 +114,9 @@ pub fn tacky_function_to_assembly(function: tacker::FunctionDefinition) -> Vec<I
                 instructions.push(Instruction::Jmp(target));
             }
             tacker::Instruction::Copy(src, dst) => {
+                println!("copy");
+                println!("{:#?} {:#?}", src, dst);
+                println!("{:#?} {:#?}", val_to_operand(src.clone()), val_to_operand(dst.clone()));
                 instructions.push(Instruction::Mov(val_to_operand(src), val_to_operand(dst)));
             }
             tacker::Instruction::Label(identifier) => {
@@ -151,6 +155,7 @@ pub fn tacky_function_to_assembly(function: tacker::FunctionDefinition) -> Vec<I
                 src2,
                 dst,
             ) => {
+                println!("binary");
                 instructions.push(Instruction::Mov(
                     val_to_operand(src1),
                     val_to_operand(dst.clone()),
@@ -325,8 +330,10 @@ fn replace_pseudo_operands(instructions: &mut Vec<Instruction>) -> i64 {
     let mut stack_size = 0;
 
     for instruction in instructions.iter_mut() {
+        println!("{:?}", instruction);
         match instruction {
             Instruction::Mov(src, dst) => {
+                println!("changing mov");
                 *instruction = Instruction::Mov(
                     replace_psuedo_operand_if_needed(
                         src.clone(),
@@ -351,6 +358,7 @@ fn replace_pseudo_operands(instructions: &mut Vec<Instruction>) -> i64 {
                 );
             }
             Instruction::Binary(op, src, dst) => {
+                println!("changing bin");
                 *instruction = Instruction::Binary(
                     op.clone(),
                     replace_psuedo_operand_if_needed(

@@ -584,12 +584,14 @@ fn parse_factor(tokens: &mut Peekable<impl Iterator<Item = Token>>) -> Result<Ex
             if let Some(Token::OpenParenthesis) = tokens.peek() {
                 tokens.next();
                 if let Some(Token::CloseParenthesis) = tokens.peek() {
+                    tokens.next();
                     Ok(Expression::FunctionCall(id, Vec::new()))
                 } else {
                     let mut args: Vec<Expression> = Vec::new();
                     args.push(parse_expression(tokens, MAX_PRECEDENCE)?);
                     while let Some(token) = tokens.peek() {
                         if let Token::CloseParenthesis = token {
+                            tokens.next();
                             break;
                         }
                         if let Token::Comma = token {

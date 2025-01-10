@@ -2,7 +2,7 @@
 main:
 	pushq %rbp
 	movq %rsp, %rbp
-	subq $144, %rsp
+	subq $208, %rsp
 	movl $10, -4(%rbp)
 	movl $3, -8(%rbp)
 	movl -8(%rbp), %r11d
@@ -182,6 +182,48 @@ main:
 	movl %r11d, -144(%rbp)
 	movl -144(%rbp), %r10d
 	movl %r10d, -4(%rbp)
+	movl $72, %edi
+	call putchar
+	movl %eax, -148(%rbp)
+	movl $101, %edi
+	call putchar
+	movl %eax, -152(%rbp)
+	movl $108, %edi
+	call putchar
+	movl %eax, -156(%rbp)
+	movl $108, %edi
+	call putchar
+	movl %eax, -160(%rbp)
+	movl $111, %edi
+	call putchar
+	movl %eax, -164(%rbp)
+	movl $44, %edi
+	call putchar
+	movl %eax, -168(%rbp)
+	movl $32, %edi
+	call putchar
+	movl %eax, -172(%rbp)
+	movl $87, %edi
+	call putchar
+	movl %eax, -176(%rbp)
+	movl $111, %edi
+	call putchar
+	movl %eax, -180(%rbp)
+	movl $114, %edi
+	call putchar
+	movl %eax, -184(%rbp)
+	movl $108, %edi
+	call putchar
+	movl %eax, -188(%rbp)
+	movl $100, %edi
+	call putchar
+	movl %eax, -192(%rbp)
+	movl $33, %edi
+	call putchar
+	movl %eax, -196(%rbp)
+	movl $10, %edi
+	call putchar
+	movl %eax, -200(%rbp)
 	movl -4(%rbp), %eax
 	movq %rbp, %rsp
 	popq %rbp

@@ -4,11 +4,11 @@ use std::io;
 mod assembler;
 mod gcc;
 mod generator;
-mod lexer;
-mod semantic_analyzer;
-mod parser;
-mod tacker;
 mod identifier_resolver;
+mod lexer;
+mod parser;
+mod semantic_analyzer;
+mod tacker;
 mod type_checker;
 
 pub fn run(
@@ -23,8 +23,6 @@ pub fn run(
             Some(pos) => &source_file[..pos],
             None => source_file,
         };
-
-        println!("{}:", base_name);
 
         let input = fs::read_to_string(source_file)?;
 
@@ -73,7 +71,9 @@ pub fn run(
         assembly_files.push(assembly_file);
     }
 
-    gcc::compile_executable(&assembly_files, &executable_file, no_main)?;
-
-    Ok(())
+    if stop_at.is_some() {
+        Ok(())
+    } else {
+        gcc::compile_executable(&assembly_files, &executable_file, no_main)
+    }
 }

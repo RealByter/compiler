@@ -412,7 +412,6 @@ fn replace_pseudo_operands(instructions: &mut Vec<Instruction>) -> i64 {
 
 fn fix_up(orig_instructions: Vec<Instruction>, stack_size: i64) -> Vec<Instruction> {
     let mut instructions: Vec<Instruction> = Vec::new();
-
     instructions.push(Instruction::AllocateStack(((stack_size + 15) / 16) * 16));
 
     for instruction in orig_instructions {

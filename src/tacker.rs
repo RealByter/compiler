@@ -71,18 +71,18 @@ pub fn generate_tacky(program: parser::Program) -> Program {
         functions: Vec::new(),
     };
 
-    for function in program.functions {
-        if let Some(body) = function.body {
-            let mut tacky_function = FunctionDefinition {
-                identifier: function.name,
-                params: function.params,
-                instructions: Vec::new(),
-            };
-            emit_tacky_block(body, &mut tacky_function.instructions);
-            tacky_function.instructions.push(Instruction::Return(Val::Constant(0)));
-            tacky_program.functions.push(tacky_function);
-        }
-    }
+    // for function in program.functions {
+    //     if let Some(body) = function.body {
+    //         let mut tacky_function = FunctionDefinition {
+    //             identifier: function.name,
+    //             params: function.params,
+    //             instructions: Vec::new(),
+    //         };
+    //         emit_tacky_block(body, &mut tacky_function.instructions);
+    //         tacky_function.instructions.push(Instruction::Return(Val::Constant(0)));
+    //         tacky_program.functions.push(tacky_function);
+    //     }
+    // }
 
     tacky_program
 }
@@ -221,7 +221,7 @@ fn emit_tacky_statement(statement: parser::Statement, instructions: &mut Vec<Ins
 
 fn emit_tacky_delcaration(declaration: parser::Declaration, instructions: &mut Vec<Instruction>) {
     match declaration {
-        parser::Declaration::VarDecl(parser::VariableDeclaration { name, init }) => {
+        parser::Declaration::VarDecl(parser::VariableDeclaration { name, init, storage_class }) => {
             if let Some(init) = init {
                 let result = emit_tacky_value(init, instructions);
                 instructions.push(Instruction::Copy(result, Val::Var(name)));

@@ -10,14 +10,15 @@ struct IdentifierEntry {
 type IdentifierMap = HashMap<String, IdentifierEntry>;
 
 pub fn resolve_identifiers(program: Program) -> Result<Program, String> {
-    let mut identifier_map: IdentifierMap = HashMap::new();
-    let mut new_functions: Vec<FunctionDeclaration> = Vec::new();
-    for function in program.functions {
-        new_functions.push(resolve_function_declaration(function, &mut identifier_map)?);
-    }
-    Ok(Program {
-        functions: new_functions,
-    })
+    // let mut identifier_map: IdentifierMap = HashMap::new();
+    // let mut new_functions: Vec<FunctionDeclaration> = Vec::new();
+    // for function in program.functions {
+    //     new_functions.push(resolve_function_declaration(function, &mut identifier_map)?);
+    // }
+    // Ok(Program {
+    //     functions: new_functions,
+    // }) 
+    Ok(program)
 }
 
 fn resolve_block(block: Block, identifier_map: &mut IdentifierMap) -> Result<Block, String> {
@@ -43,6 +44,7 @@ fn resolve_param_declaration(
         VariableDeclaration {
             name: param,
             init: None,
+            storage_class: todo!(),
         },
         identifier_map,
     ) {
@@ -80,6 +82,7 @@ fn resolve_variable_declaration(
             Some(expression) => Some(resolve_expression(expression, identifier_map)?),
             None => None,
         },
+        storage_class: todo!(),
     })
 }
 
@@ -120,6 +123,7 @@ fn resolve_function_declaration(
         name: function_declaration.name,
         params: new_params,
         body: new_body,
+        storage_class: todo!(),
     })
 }
 

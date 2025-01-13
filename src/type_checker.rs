@@ -16,9 +16,9 @@ pub type SymbolTable = HashMap<String, SymbolEntry>;
 
 pub fn check_types(program: &Program) -> Result<SymbolTable, String> {
     let mut symbol_table: SymbolTable = HashMap::new();
-    for function in &program.functions {
-        typecheck_function_declaration(&function, &mut symbol_table)?;
-    }
+    // for function in &program.functions {
+    //     typecheck_function_declaration(&function, &mut symbol_table)?;
+    // }
     Ok(symbol_table)
 }
 

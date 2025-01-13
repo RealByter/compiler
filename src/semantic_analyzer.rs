@@ -8,11 +8,11 @@ enum InStatement {
 }
 
 pub fn analyze_semantics(mut program: Program) -> Result<Program, String> {
-    for function in program.functions.iter_mut() {
-        if let Some(body) = &mut function.body {
-            label_block(body, None)?;
-        }
-    }
+    // for function in program.functions.iter_mut() {
+    //     if let Some(body) = &mut function.body {
+    //         label_block(body, None)?;
+    //     }
+    // }
     Ok(program)
 }
 

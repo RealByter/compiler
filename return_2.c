@@ -1,10 +1,10 @@
-int putchar(int c);
+extern int putchar(int c);
 
-int main(void)
+static int main(void)
 {
-    int x;
+    extern int x;
 
-    int y = 10;
+    static int y = 10;
 
     x = ~~((!(-(2 + 3 * 4) / 2 % 7 == 0) != 1) && (2 + 3 * 4 > 10) || (5 - 3 <= 1));
 

@@ -15,7 +15,9 @@ pub enum Keyword {
     Continue,
     Switch,
     Default,
-    Case
+    Case,
+    Static,
+    Extern
 }
 
 #[derive(Debug)]
@@ -153,6 +155,14 @@ lazy_static::lazy_static! {
         TokenPattern {
             regex: Regex::new(r"\bcase\b").unwrap(),
             token_type: |_| Token::Keyword(Keyword::Case),
+        },
+        TokenPattern {
+            regex: Regex::new(r"\bstatic\b").unwrap(),
+            token_type: |_| Token::Keyword(Keyword::Static),
+        },
+        TokenPattern {
+            regex: Regex::new(r"\bextern\b").unwrap(),
+            token_type: |_| Token::Keyword(Keyword::Extern),
         },
         TokenPattern {
             regex: Regex::new(r"[a-zA-Z_]\w*\b").unwrap(),

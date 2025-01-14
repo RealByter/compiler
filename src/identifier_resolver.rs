@@ -3,22 +3,48 @@ use std::collections::HashMap;
 
 struct IdentifierEntry {
     unique_name: String,
-    from_current_block: bool,
+    from_current_scope: bool,
     has_linkage: bool,
 }
 
 type IdentifierMap = HashMap<String, IdentifierEntry>;
 
 pub fn resolve_identifiers(program: Program) -> Result<Program, String> {
-    // let mut identifier_map: IdentifierMap = HashMap::new();
-    // let mut new_functions: Vec<FunctionDeclaration> = Vec::new();
-    // for function in program.functions {
-    //     new_functions.push(resolve_function_declaration(function, &mut identifier_map)?);
-    // }
-    // Ok(Program {
-    //     functions: new_functions,
-    // }) 
-    Ok(program)
+    let mut identifier_map: IdentifierMap = HashMap::new();
+    let mut new_declarations: Vec<Declaration> = Vec::new();
+    for declaration in program.declarations {
+        match declaration {
+            Declaration::FuncDecl(function) => {
+                new_declarations.push(Declaration::FuncDecl(resolve_function_declaration(
+                    function,
+                    &mut identifier_map,
+                )?));
+            }
+            Declaration::VarDecl(variable) => {
+                new_declarations.push(Declaration::VarDecl(
+                    resolve_file_scope_variable_declaration(variable, &mut identifier_map)?,
+                ));
+            }
+        }
+    }
+    Ok(Program {
+        declarations: new_declarations,
+    })
+}
+
+fn resolve_file_scope_variable_declaration(
+    var_declaration: VariableDeclaration,
+    identifier_map: &mut IdentifierMap,
+) -> Result<VariableDeclaration, String> {
+    identifier_map.insert(
+        var_declaration.name.clone(),
+        IdentifierEntry {
+            unique_name: var_declaration.name.clone(),
+            from_current_scope: true,
+            has_linkage: true,
+        },
+    );
+    Ok(var_declaration)
 }
 
 fn resolve_block(block: Block, identifier_map: &mut IdentifierMap) -> Result<Block, String> {
@@ -40,11 +66,11 @@ fn resolve_param_declaration(
     param: String,
     identifier_map: &mut IdentifierMap,
 ) -> Result<String, String> {
-    match resolve_variable_declaration(
+    match resolve_local_variable_declaration(
         VariableDeclaration {
             name: param,
             init: None,
-            storage_class: todo!(),
+            storage_class: None,
         },
         identifier_map,
     ) {
@@ -53,37 +79,49 @@ fn resolve_param_declaration(
     }
 }
 
-fn resolve_variable_declaration(
+fn resolve_local_variable_declaration(
     var_declaration: VariableDeclaration,
     identifier_map: &mut IdentifierMap,
 ) -> Result<VariableDeclaration, String> {
-    if identifier_map.contains_key(&var_declaration.name)
-        && identifier_map
-            .get(&var_declaration.name)
-            .unwrap()
-            .from_current_block
-    {
-        return Err("Duplicate variable declaration.".to_string());
+    if identifier_map.contains_key(&var_declaration.name) {
+        let prev_entry = identifier_map.get(&var_declaration.name).unwrap();
+        if prev_entry.from_current_scope
+            && !(prev_entry.has_linkage
+                && var_declaration.storage_class == Some(StorageClass::Extern))
+        {
+            return Err("Conflicting local declarations".to_string());
+        }
     }
 
-    let unique_name = make_unique_name(var_declaration.name.clone());
-    identifier_map.insert(
-        var_declaration.name.clone(),
-        IdentifierEntry {
-            unique_name: unique_name.clone(),
-            from_current_block: true,
-            has_linkage: false,
-        },
-    );
-
-    Ok(VariableDeclaration {
-        name: unique_name,
-        init: match var_declaration.init {
-            Some(expression) => Some(resolve_expression(expression, identifier_map)?),
-            None => None,
-        },
-        storage_class: todo!(),
-    })
+    if var_declaration.storage_class == Some(StorageClass::Extern) {
+        identifier_map.insert(
+            var_declaration.name.clone(),
+            IdentifierEntry {
+                unique_name: var_declaration.name.clone(),
+                from_current_scope: true,
+                has_linkage: true,
+            },
+        );
+        Ok(var_declaration)
+    } else {
+        let unique_name = make_unique_name(var_declaration.name.clone());
+        identifier_map.insert(
+            var_declaration.name.clone(),
+            IdentifierEntry {
+                unique_name: unique_name.clone(),
+                from_current_scope: true,
+                has_linkage: false,
+            },
+        );
+        Ok(VariableDeclaration {
+            name: unique_name,
+            init: match var_declaration.init {
+                Some(expression) => Some(resolve_expression(expression, identifier_map)?),
+                None => None,
+            },
+            storage_class: var_declaration.storage_class,
+        })
+    }
 }
 
 fn resolve_function_declaration(
@@ -91,10 +129,8 @@ fn resolve_function_declaration(
     identifier_map: &mut IdentifierMap,
 ) -> Result<FunctionDeclaration, String> {
     if identifier_map.contains_key(&function_declaration.name) {
-        let prev_entry = identifier_map
-            .get(&function_declaration.name)
-            .unwrap();
-        if prev_entry.from_current_block && !prev_entry.has_linkage {
+        let prev_entry = identifier_map.get(&function_declaration.name).unwrap();
+        if prev_entry.from_current_scope && !prev_entry.has_linkage {
             return Err("Duplicate declaration".to_string());
         }
     }
@@ -103,7 +139,7 @@ fn resolve_function_declaration(
         function_declaration.name.clone(),
         IdentifierEntry {
             unique_name: function_declaration.name.clone(),
-            from_current_block: true,
+            from_current_scope: true,
             has_linkage: true,
         },
     );
@@ -123,7 +159,7 @@ fn resolve_function_declaration(
         name: function_declaration.name,
         params: new_params,
         body: new_body,
-        storage_class: todo!(),
+        storage_class: function_declaration.storage_class,
     })
 }
 
@@ -133,12 +169,18 @@ fn resolve_declaration(
 ) -> Result<Declaration, String> {
     match declaration {
         Declaration::VarDecl(var_declaration) => Ok(Declaration::VarDecl(
-            resolve_variable_declaration(var_declaration, identifier_map)?,
+            resolve_local_variable_declaration(var_declaration, identifier_map)?,
         )),
         Declaration::FuncDecl(function_declaration) => {
             if let Some(_) = function_declaration.body {
                 return Err(format!(
                     "Local function declaration can't have a body: {}",
+                    function_declaration.name
+                ));
+            }
+            if function_declaration.storage_class == Some(StorageClass::Static) {
+                return Err(format!(
+                    "Local function declaration can't be static: {}",
                     function_declaration.name
                 ));
             }
@@ -287,7 +329,7 @@ fn resolve_statement(
 fn resolve_for_init(init: ForInit, identifier_map: &mut IdentifierMap) -> Result<ForInit, String> {
     match init {
         ForInit::InitDeclaration(declaration) => Ok(ForInit::InitDeclaration(
-            resolve_variable_declaration(declaration, identifier_map)?,
+            resolve_local_variable_declaration(declaration, identifier_map)?,
         )),
         ForInit::InitExpression(expression) => {
             if let Some(expression) = expression {
@@ -309,7 +351,7 @@ fn copy_identifier_map(identifier_map: &IdentifierMap) -> IdentifierMap {
             key.clone(),
             IdentifierEntry {
                 unique_name: value.unique_name.clone(),
-                from_current_block: false,
+                from_current_scope: false,
                 has_linkage: value.has_linkage,
             },
         );

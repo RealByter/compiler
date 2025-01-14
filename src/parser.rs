@@ -17,7 +17,7 @@ pub enum BlockItem {
     D(Declaration),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum StorageClass {
     Static,
     Extern,

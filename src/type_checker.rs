@@ -229,6 +229,9 @@ fn typecheck_statement(
         Statement::For(for_init, expression1, expression2, statement, _) => {
             match for_init {
                 ForInit::InitDeclaration(declaration) => {
+                    if declaration.storage_class != None {
+                        return Err("Variable declaration in for initiation can't have a storage class".to_string());
+                    }
                     typecheck_local_var_declaration(declaration, symbol_table)?;
                 }
                 ForInit::InitExpression(expression) => {

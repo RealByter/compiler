@@ -2,14 +2,22 @@ use crate::parser;
 
 #[derive(Debug)]
 pub struct Program {
-    pub functions: Vec<FunctionDefinition>,
+    pub declarations: Vec<TopLevel>,
 }
 
 #[derive(Debug)]
-pub struct FunctionDefinition {
-    pub identifier: String,
-    pub params: Vec<String>,
-    pub instructions: Vec<Instruction>,
+pub enum TopLevel {
+    Function {
+        identifier: String,
+        global: bool,
+        params: Vec<String>,
+        instructions: Vec<Instruction>,
+    },
+    StaticVariable{
+        identifier: String,
+        global: bool,
+        init: i64
+    },
 }
 
 #[derive(Debug)]
@@ -221,7 +229,11 @@ fn emit_tacky_statement(statement: parser::Statement, instructions: &mut Vec<Ins
 
 fn emit_tacky_delcaration(declaration: parser::Declaration, instructions: &mut Vec<Instruction>) {
     match declaration {
-        parser::Declaration::VarDecl(parser::VariableDeclaration { name, init, storage_class }) => {
+        parser::Declaration::VarDecl(parser::VariableDeclaration {
+            name,
+            init,
+            storage_class,
+        }) => {
             if let Some(init) = init {
                 let result = emit_tacky_value(init, instructions);
                 instructions.push(Instruction::Copy(result, Val::Var(name)));
@@ -337,7 +349,7 @@ fn emit_tacky_value(expression: parser::Expression, instructions: &mut Vec<Instr
             let result = Val::Var(make_temp_name());
             instructions.push(Instruction::FunctionCall(name, arg_vals, result.clone()));
             result
-        },
+        }
     }
 }
 

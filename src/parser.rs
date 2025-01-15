@@ -89,7 +89,7 @@ pub struct VariableDeclaration {
     pub storage_class: Option<StorageClass>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Expression {
     Var(String),
     Constant(i64),
@@ -100,7 +100,7 @@ pub enum Expression {
     FunctionCall(String, Vec<Expression>),                          // identifier, args
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum UnaryOperator {
     Negate,
     Complement,

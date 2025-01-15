@@ -50,6 +50,7 @@ pub fn run(
         println!("{:#?}", program);
         let program = semantic_analyzer::analyze_semantics(program).unwrap();
         let symbol_table = type_checker::check_types(&program).unwrap();
+        println!("{:#?}", symbol_table);
         if stop_at == Some(&"--validate".to_string()) {
             continue;
         }
